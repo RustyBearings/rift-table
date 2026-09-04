@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rift Table</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -340,6 +342,80 @@ a{color:var(--order)}
 .intro b{color:var(--ink)}
 .intro button{position:absolute;top:8px;right:8px;background:transparent;border:0;color:var(--ink-mute);cursor:pointer;font:600 10px/1 var(--f-display);letter-spacing:.1em;padding:5px}
 .intro button:hover{color:var(--gold)}
+
+/* ---------- phones ---------- */
+@media(max-width:560px){
+  .wrap{padding:13px 11px 44px}
+  header.top{gap:10px;padding-bottom:11px;margin-bottom:13px}
+  .brand{font-size:20px;letter-spacing:.05em;gap:9px}
+  .brand .mark{font-size:12px}
+  .tagline{font-size:11.5px;margin-top:6px;line-height:1.5}
+  .clock{padding:6px 10px;font-size:10.5px}
+  .clock b{font-size:13px}
+  .layout{gap:13px}
+  .col-main,.col-side{gap:11px}
+
+  .panel>h2{padding:11px 12px 10px;font-size:11px;letter-spacing:.12em}
+  .panel>.body{padding:12px}
+  .fold>summary{padding:12px}
+  .fold .foldbody{padding:12px}
+  .mappanel>.body{padding:10px}
+  .mappanel>h2 .hint-inline{display:none}
+  .mapwrap{max-width:100%}
+
+  /* eval strip: number + split on one line, full-width bar beneath */
+  .evalstrip{padding:11px 12px 12px}
+  .er{grid-template-columns:auto 1fr;grid-template-areas:"num spl" "bar bar";column-gap:12px;row-gap:9px}
+  .er .evalnum{grid-area:num;min-width:0;font-size:25px}
+  .er .bar{grid-area:bar;height:32px}
+  .er .split{grid-area:spl;justify-self:end;align-self:center;font-size:12px}
+  .ec{flex-direction:column;gap:6px;margin-top:9px}
+  .compbar{align-items:flex-start}
+
+  /* scrubber: game name gets its own line, controls wrap below it */
+  .scrubstrip{padding:10px 11px 12px}
+  .scrubstrip .scrubhead{flex-wrap:wrap;gap:8px}
+  .scrubstrip .scrubhead #gamename{flex-basis:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .scrubstrip .scrubhead #loadyours{margin-left:0}
+  .scrubstrip .scrubhead .btn.sm{padding:8px 11px;font-size:10px}
+  .scrubmarks{height:16px}
+  .scrubmarks .pip{width:11px;height:11px;top:2px}
+  .scrubmarks .pip.t-elder,.scrubmarks .pip.t-baron{width:13px;height:13px}
+
+  /* touch targets */
+  #scrub{height:32px}
+  input[type=range]{min-height:30px}
+  .btn{padding:12px 15px}
+  .btn.sm{padding:9px 12px}
+  .seg button{padding:10px 2px;font-size:10px}
+  .stepper{gap:5px}
+  .stepper button{width:28px;height:28px;font-size:16px}
+  .stepper span{min-width:22px;font-size:13px}
+  select,input[type=text]{padding:10px}
+  .dchip{padding:9px 10px;font-size:12px}
+  .row{grid-template-columns:64px 1fr 92px;gap:8px}
+  .champrow{grid-template-columns:52px 1fr}
+
+  /* scoreboard: guarantee the item strip fits a 320px screen */
+  #sbpanel>h2 span{font-size:12px}
+  .sb .r{padding:7px 4px;column-gap:7px}
+  .sb .r .items i{width:16px;height:16px}
+  .sb .r .cn{font-size:12.5px}
+  .sb .strucrow{gap:10px}
+
+  /* key moments: stack the cause under the time + delta on very narrow screens */
+  .keymoments button{grid-template-columns:auto 1fr;grid-template-areas:"tm dl" "cz cz";row-gap:3px;column-gap:9px}
+  .keymoments button .tm{grid-area:tm}
+  .keymoments button .dl{grid-area:dl;justify-self:end}
+  .keymoments button .cz{grid-area:cz;white-space:normal}
+
+  .intro{padding:11px 46px 12px 12px;font-size:11.5px}
+  .presetrow{gap:7px}
+
+  /* Load-a-game: full-width "Find games" button under the id + region */
+  .riotrow{grid-template-columns:1fr 92px}
+  .riotrow #riotfetch{grid-column:1/-1}
+}
 </style>
 
 <div class="wrap">
