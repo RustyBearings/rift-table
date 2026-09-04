@@ -138,14 +138,16 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
 .compbar .dot.b{background:var(--order)}.compbar .dot.r{background:var(--chaos)}
 .compbar b{color:var(--ink);font-weight:600;font-family:var(--f-display);letter-spacing:.04em}
 
-/* ---------- game scrubber strip ---------- */
-.scrubstrip{background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--edge);padding:9px 13px 11px;
-  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
-.scrubstrip .scrubhead{display:flex;align-items:center;gap:10px;margin-bottom:7px}
-.scrubstrip .scrubhead b{font-family:var(--f-display);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase}
-.scrubstrip .scrubhead .mono{color:var(--gold);font-size:13px;font-family:var(--f-display);font-weight:600}
-.scrubstrip .scrubhead #loadyours{margin-left:auto}
-.scrubstrip .scrubhead .btn.sm{padding:5px 9px}
+/* ---------- game scrubber, now a broadcast overlay bar on the map itself ---------- */
+.mapscrub{position:absolute;top:0;left:0;right:0;z-index:11;padding:9px 11px 10px;
+  background:linear-gradient(180deg,rgba(5,8,12,.92) 0%,rgba(5,8,12,.8) 55%,rgba(5,8,12,0) 100%)}
+.mapscrub .scrubhead{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:6px}
+.mapscrub .scrubhead b{font-family:var(--f-display);font-size:12px;letter-spacing:.03em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:36%}
+.mapscrub .scrubhead .mono{color:var(--gold);font-size:11.5px;font-family:var(--f-display);font-weight:600;white-space:nowrap}
+.mapscrub .scrubhead #loadyours{margin-left:auto}
+.mapscrub .scrubhead .btn.sm{padding:4px 8px;font-size:9px}
+.mapscrub #scrub{width:100%;margin-top:1px}
+.mapscrub .scrubmarks{margin-top:1px}
 .scrubmarks{position:relative;height:13px;margin:2px 7px 0}
 .scrubmarks .pip{position:absolute;top:2px;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;
   background:var(--ink-mute);box-shadow:0 0 0 1.5px var(--ring,var(--edge-lit)),0 0 0 3px var(--void);cursor:pointer}
@@ -158,7 +160,9 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
 .scrubmarks .pip.t-herald{background:#6b86ff;border-radius:1px;transform:translateX(-50%) rotate(45deg)}
 .scrubmarks .pip.t-inhib{background:var(--chaos);width:3px;height:11px;border-radius:1px;top:1px}
 .scrubmarks .pip .cnt{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font:700 7px/1 var(--f-mono);color:var(--ink)}
-.scrubleg{display:flex;flex-wrap:wrap;gap:4px 11px;margin:5px 7px 0;font:400 9px/1.4 var(--f-mono);color:var(--ink-mute)}
+.scrubleg{position:absolute;left:0;right:0;bottom:0;z-index:9;display:flex;flex-wrap:wrap;gap:4px 11px;
+  margin:0;padding:13px 11px 7px;font:400 9px/1.4 var(--f-mono);color:var(--ink-mute);
+  background:linear-gradient(0deg,rgba(5,8,12,.88) 0%,rgba(5,8,12,0) 100%)}
 .scrubleg span{display:flex;align-items:center;gap:4px}
 .scrubleg .dim{color:var(--ink-mute);opacity:.7}
 .scrubleg .lg{width:7px;height:7px;border-radius:50%;background:var(--ink-mute);flex:none}
@@ -186,10 +190,8 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
 /* the board panel stays an un-clipped rectangle: an ancestor clip-path was hiding the
    filtered map layer in the artifact sandbox */
 .mappanel{clip-path:none}
-.mappanel::before{left:0}
-.mappanel>h2 .hint-inline{margin-left:auto;text-transform:none;letter-spacing:.02em;font-family:var(--f-mono);font-size:10px;color:var(--ink-mute);font-weight:400}
-.mappanel>h2::after{display:none}
-.mappanel>.body{padding:12px}
+.mappanel::before{left:0;z-index:12}
+.mappanel>.body{padding:7px}
 .mapwrap{position:relative;width:100%;max-width:min(100%,74vh);margin-inline:auto;aspect-ratio:1/1;overflow:hidden;background:var(--inset);box-shadow:inset 0 0 0 1px var(--edge);touch-action:none;
   background-image:var(--map-img);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
 .mapwrap::before{content:"";position:absolute;inset:0;background:var(--map-img) center/100% 100% no-repeat;filter:saturate(.62) brightness(.6) contrast(1.06);z-index:0}
@@ -211,6 +213,15 @@ canvas.map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 @keyframes pulse{0%{transform:scale(.62);opacity:.85}100%{transform:scale(1.55);opacity:0}}
 @media(prefers-reduced-motion:reduce){.contested{animation:none;opacity:.5}}
 .objchip{position:absolute;transform:translate(-50%,-50%);font:600 9.5px/1.35 var(--f-mono);background:rgba(5,9,13,.9);box-shadow:inset 0 0 0 1px var(--edge-lit);padding:3px 7px;z-index:4;pointer-events:none;white-space:nowrap;text-align:center;letter-spacing:.03em}
+/* points at whoever the top macro card is about - the visual thread from read to map */
+.macroalert{position:absolute;width:19px;height:19px;margin:-30px 0 0 9px;border-radius:50%;z-index:6;
+  display:flex;align-items:center;justify-content:center;font:800 12px/1 var(--f-display);color:#150f02;
+  box-shadow:0 0 0 2px var(--void),0 0 10px rgba(0,0,0,.5);animation:alertpulse 1.4s ease-in-out infinite;pointer-events:none}
+.macroalert.mistake{background:var(--chaos)}
+.macroalert.play{background:var(--gold)}
+@keyframes alertpulse{0%,100%{transform:scale(1)}50%{transform:scale(1.16)}}
+@media(prefers-reduced-motion:reduce){.macroalert{animation:none}}
+.onmap{margin-left:auto;font:600 8.5px/1 var(--f-mono);letter-spacing:.06em;color:var(--gold);white-space:nowrap}
 
 #scrub{width:100%;accent-color:var(--gold);display:block}
 
@@ -403,9 +414,11 @@ a{color:var(--order)}
   .panel>.body{padding:12px}
   .fold>summary{padding:12px}
   .fold .foldbody{padding:12px}
-  .mappanel>.body{padding:10px}
-  .mappanel>h2 .hint-inline{display:none}
+  .mappanel>.body{padding:6px}
   .mapwrap{max-width:100%}
+  .mapscrub{padding:7px 8px 8px}
+  .mapscrub .scrubhead b{max-width:30%}
+  .scrubleg{padding:11px 8px 6px;font-size:8.5px}
 
   /* eval strip: number + split on one line, full-width bar beneath */
   .evalstrip{padding:11px 12px 12px}
@@ -416,12 +429,10 @@ a{color:var(--order)}
   .ec{flex-direction:column;gap:6px;margin-top:9px}
   .compbar{align-items:flex-start}
 
-  /* scrubber: game name gets its own line, controls wrap below it */
-  .scrubstrip{padding:10px 11px 12px}
-  .scrubstrip .scrubhead{flex-wrap:wrap;gap:8px}
-  .scrubstrip .scrubhead #gamename{flex-basis:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-  .scrubstrip .scrubhead #loadyours{margin-left:0}
-  .scrubstrip .scrubhead .btn.sm{padding:8px 11px;font-size:10px}
+  /* scrub overlay: game name gets its own line, controls wrap below it, still on the map */
+  .mapscrub .scrubhead #gamename{flex-basis:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}
+  .mapscrub .scrubhead #loadyours{margin-left:0}
+  .mapscrub .scrubhead .btn.sm{padding:6px 9px;font-size:9px}
   .scrubmarks{height:16px}
   .scrubmarks .pip{width:11px;height:11px;top:2px}
   .scrubmarks .pip.t-elder,.scrubmarks .pip.t-baron{width:13px;height:13px}
@@ -515,28 +526,30 @@ a{color:var(--order)}
         <div class="body"><div class="sb" id="sbbody"></div></div>
       </div>
 
-      <div class="scrubstrip" id="gamepanel" hidden>
-        <div class="scrubhead">
-          <b id="gamename">Game</b><span class="mono" id="scrublabel">0:00</span>
-          <button class="btn sm gold" id="resetframe" hidden>&#8624; Reset board</button>
-          <button class="btn sm" id="playbtn" title="Space to play/pause, arrow keys to step">&#9654; Play</button>
-          <button class="btn sm" id="sharebtn">Share link</button>
-          <button class="btn sm" id="loadyours">Load a game</button>
-          <button class="btn sm" id="gameexit">Sandbox</button>
-        </div>
-        <input type="range" id="scrub" min="0" max="1" step="1" value="0" aria-label="Game minute">
-        <div class="scrubmarks" id="scrubmarks"></div>
-        <div class="scrubleg" id="scrubleg" hidden>
-          <span><i class="lg t-dragon"></i>Dragon</span><span><i class="lg t-elder"></i>Elder</span>
-          <span><i class="lg t-herald"></i>Herald</span><span><i class="lg t-grubs"></i>Grubs</span>
-          <span><i class="lg t-baron"></i>Baron</span><span><i class="lg t-inhib"></i>Inhib</span>
-          <span class="dim">ring = who took it &middot; click a marker to jump</span>
-        </div>
-      </div>
-
       <div class="panel mappanel">
-        <h2>Summoner's Rift <span class="hint-inline">drag tokens &middot; scrub the timeline</span></h2>
-        <div class="body"><div class="mapwrap" id="mapwrap"><canvas class="map" id="mapcanvas"></canvas></div></div>
+        <div class="body">
+          <div class="mapwrap" id="mapwrap">
+            <canvas class="map" id="mapcanvas"></canvas>
+            <div class="mapscrub" id="gamepanel" hidden>
+              <div class="scrubhead">
+                <b id="gamename">Game</b><span class="mono" id="scrublabel">0:00</span>
+                <button class="btn sm gold" id="resetframe" hidden title="Reset board">&#8624;</button>
+                <button class="btn sm" id="playbtn" title="Space to play/pause, arrow keys to step">&#9654; Play</button>
+                <button class="btn sm" id="sharebtn" title="Copy a shareable link">Share</button>
+                <button class="btn sm" id="loadyours">Load a game</button>
+                <button class="btn sm" id="gameexit">Sandbox</button>
+              </div>
+              <input type="range" id="scrub" min="0" max="1" step="1" value="0" aria-label="Game minute">
+              <div class="scrubmarks" id="scrubmarks"></div>
+            </div>
+            <div class="scrubleg" id="scrubleg" hidden>
+              <span><i class="lg t-dragon"></i>Dragon</span><span><i class="lg t-elder"></i>Elder</span>
+              <span><i class="lg t-herald"></i>Herald</span><span><i class="lg t-grubs"></i>Grubs</span>
+              <span><i class="lg t-baron"></i>Baron</span><span><i class="lg t-inhib"></i>Inhib</span>
+              <span class="dim">ring = who took it &middot; click a marker to jump</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -805,7 +818,7 @@ function computeMacro(ev){
   const bB=nearCount(PIT.baron,'blue'),rB=nearCount(PIT.baron,'red');
   const dB=ev.dB,dR=ev.dR,rs=ev.rs,net=ev.net;
   const T=x=>x==='blue'?'Blue':'Red';
-  const add=(kind,team,ttl,bd,score)=>out.push({kind,team,ttl,bd,score});
+  const add=(kind,team,ttl,bd,score,loc)=>out.push({kind,team,ttl,bd,score,loc});
 
   [['blue',bB,rB,dR,'red'],['red',rB,bB,dB,'blue']].forEach(([tm,mine,theirs,ed,en])=>{
     if(baronUp&&mine>=3&&(mine-theirs>=2||ed>=1))
@@ -826,7 +839,7 @@ function computeMacro(ev){
     if(s.dead[en].bot){
       const obj=baronUp?'Baron':drakeSoon?'Dragon':'a tower or a pick mid';
       const who=champName(en,'bot')||T(en)+' ADC';
-      add('play',tm,who+' is dead - take space','No enemy carry for ~'+rs+'s. '+T(tm)+' should force '+obj+' right now while their teamfight is gutted.',88-(baronUp||drakeSoon?0:9));
+      add('play',tm,who+' is dead - take space','No enemy carry for ~'+rs+'s. '+T(tm)+' should force '+obj+' right now while their teamfight is gutted.',88-(baronUp||drakeSoon?0:9),{side:en,role:'bot'});
     }
   });
 
@@ -840,9 +853,9 @@ function computeMacro(ev){
     add('play',tm,'4v5 window - '+downWho+' is dead','~'+rs+'s until '+T(en)+' is whole. '+(objLive
         ? T(tm)+' should force '+obj+' or a tower now, or catch a second on the collapse.'
         : T(tm)+' should make deep vision, take a tower or blow up '+T(en)+"'s jungle - convert the number before it resets."),
-      objLive?90:74);
+      objLive?90:74,{side:en,role:downRole});
     if(objLive)
-      add('mistake',en,downWho+' is dead - don\'t contest',T(en)+' is 4v5 for ~'+rs+'s. Do not fight for '+obj+' - stall, give it if you must, and regroup at the respawn. A lost fight here snowballs.',80);
+      add('mistake',en,downWho+' is dead - don\'t contest',T(en)+' is 4v5 for ~'+rs+'s. Do not fight for '+obj+' - stall, give it if you must, and regroup at the respawn. A lost fight here snowballs.',80,{side:en,role:downRole});
   });
   [['blue',lanePrio('mid')>=0&&lanePrio('bot')>=0],['red',lanePrio('mid')<=0&&lanePrio('bot')<=0]].forEach(([tm,prio])=>{
     if(drakeSoon&&prio&&!baronUp)
@@ -867,13 +880,13 @@ function computeMacro(ev){
     if(Math.abs(w)!==2)return;
     const pinned=w>0?'red':'blue', pinnedRole=ln==='bot'?'bot':ln;
     const who=champName(pinned,pinnedRole)||T(pinned)+' '+RN[pinnedRole];
-    add('note',pinned,who+' is pinned '+ln,'The '+ln+' wave is crashing '+who+"'s tower - they're stuck catching it for ~20s. Don't build a play that needs them, or send help to reset the wave.",48);
+    add('note',pinned,who+' is pinned '+ln,'The '+ln+' wave is crashing '+who+"'s tower - they're stuck catching it for ~20s. Don't build a play that needs them, or send help to reset the wave.",48,{side:pinned,role:pinnedRole});
     // free-split flavour for the pusher
     const pusher=w>0?'blue':'red';
     const pv=champVec(pusher,pinnedRole);
     if(pv[1]>=2.4){
       const pn=champName(pusher,pinnedRole)||RN[pinnedRole];
-      add('play',pusher,pn+' just crashed '+ln,pn+' has ~25s of freedom after this crash - force the 4v4 through mid/objectives or take the '+ln+' tower before rotating back.',60);
+      add('play',pusher,pn+' just crashed '+ln,pn+' has ~25s of freedom after this crash - force the 4v4 through mid/objectives or take the '+ln+' tower before rotating back.',60,{side:pusher,role:pinnedRole});
     }
   });
   if(soul){
@@ -904,23 +917,24 @@ function computeMacro(ev){
     const alive=5-deadCount(en);
     const duelist=v[0]>=2.6, escape=v[4]>=1.4, fragile=base[5]>=2||base[4]<1;
 
+    const loc={side,role};
     // live local outnumbered fight (someone could take a 1vX right now)
     if(nearEn>=2&&backup===0){
       if((duelist&&k>=1.3)||k>=1.9)
-        add('play',side,'Fed '+nm+' can take this 1v'+nearEn,nm+' '+(fedTxt||'out-stats them')+' - a '+sub+' this far ahead wins the skirmish before '+T(en)+' groups. Commit while it is '+nearEn+' and not 3+.',70);
+        add('play',side,'Fed '+nm+' can take this 1v'+nearEn,nm+' '+(fedTxt||'out-stats them')+' - a '+sub+' this far ahead wins the skirmish before '+T(en)+' groups. Commit while it is '+nearEn+' and not 3+.',70,loc);
       else
-        add('mistake',side,nm+' is caught out 1v'+nearEn,nm+' has '+nearEn+' '+T(en)+' on top and no backup. A '+sub+' loses this - flash/peel out now, do not trade.',101);
+        add('mistake',side,nm+' is caught out 1v'+nearEn,nm+' has '+nearEn+' '+T(en)+' on top and no backup. A '+sub+' loses this - flash/peel out now, do not trade.',101,loc);
       return;
     }
     if(!inEnemy||backup>0||alive<3)return;
     if(base[0]>=2.3&&base[4]>=1.3&&base[1]>=2.2)
-      add('note',side,nm+' is split, not overextended',nm+' is deep in '+T(en)+"'s half with no backup - but a "+sub+(fedTxt?' that '+fedTxt:'')+' can duel or peel out. Fine while '+nm+' tracks 3+ MIA; still ward.',54);
+      add('note',side,nm+' is split, not overextended',nm+' is deep in '+T(en)+"'s half with no backup - but a "+sub+(fedTxt?' that '+fedTxt:'')+' can duel or peel out. Fine while '+nm+' tracks 3+ MIA; still ward.',54,loc);
     else if(k>=1.7&&v[0]>=2)
-      add('note',side,nm+' can hold this - for now',nm+' '+(fedTxt||'is ahead enough')+' to win most 1v1s and even a 1v2 here, but 3+ collapsing still kills a '+sub+'. Ward both flanks and keep an escape up.',58);
+      add('note',side,nm+' can hold this - for now',nm+' '+(fedTxt||'is ahead enough')+' to win most 1v1s and even a 1v2 here, but 3+ collapsing still kills a '+sub+'. Ward both flanks and keep an escape up.',58,loc);
     else if(fragile)
-      add('mistake',side,nm+' will get collapsed',nm+' has no escape and is alone in '+T(en)+"'s half with "+alive+' up. A '+sub+' should never hold a side lane here - send a bruiser and group '+nm+'.',100);
+      add('mistake',side,nm+' will get collapsed',nm+' has no escape and is alone in '+T(en)+"'s half with "+alive+' up. A '+sub+' should never hold a side lane here - send a bruiser and group '+nm+'.',100,loc);
     else
-      add('mistake',side,nm+' is overextended',nm+' is deep with no one in collapse range and '+alive+' '+T(en)+' alive. Ward and pull back or it is a free pick.',92);
+      add('mistake',side,nm+' is overextended',nm+' is deep with no one in collapse range and '+alive+' '+T(en)+' alive. Ward and pull back or it is a free pick.',92,loc);
   });});
 
   // champion-aware: splitpush plan
@@ -937,7 +951,7 @@ function computeMacro(ev){
     const v=champVec(side,best),nm=champName(side,best)||RN[best];
     const enemyBestSp=Math.max.apply(null,ROLES.map(r=>champVec(en,r)[1]));
     if(v[1]>=2.4&&v[1]-enemyBestSp>=0.5&&v[0]>=2.2)
-      add('play',side,nm+' can 1-3-1 this',nm+" out-duels anyone "+T(en)+" sends solo and sieges fast. Keep "+nm+" split, make "+T(en)+" answer with 2, and play the 4v4 through mid and objectives.",66);
+      add('play',side,nm+' can 1-3-1 this',nm+" out-duels anyone "+T(en)+" sends solo and sieges fast. Keep "+nm+" split, make "+T(en)+" answer with 2, and play the 4v4 through mid and objectives.",66,{side,role:best});
     else if(v[5]>=2&&v[0]<2)
       add('mistake',side,'Wrong pick to split',nm+" can't hold a side lane or self-peel. Group "+nm+" with the team and look for a mid pick instead of splitting.",60);
   });
@@ -991,7 +1005,7 @@ function computeMacro(ev){
 /* ---------- render ---------- */
 const $=id=>document.getElementById(id);
 const mapwrap=$('mapwrap'),cv=$('mapcanvas');
-let tokenEls={blue:{},red:{}},baronChip,dragonChip,contestedEl,bindings=[];
+let tokenEls={blue:{},red:{}},baronChip,dragonChip,contestedEl,macroAlertEl,bindings=[];
 
 // structure positions in Rift world units (0..14870) -> converted to map fractions the same
 // way tokens are, so turrets and champions share one coordinate space.
@@ -1035,12 +1049,14 @@ function render(){
     }).join(''):'<div class="note">Even across the board.</div>';
 
   const m=computeMacro(ev),cards=[...m.mistakes,...m.rest];
+  updateMacroAlert(cards[0]);
   $('macrobody').innerHTML=cards.length
-    ?cards.map(c=>{
+    ?cards.map((c,i)=>{
       const cls=c.kind==='mistake'?'mistake':c.team==='red'?'red':'';
       const chip=c.team?'<span class="chip '+c.team+'">'+c.team.toUpperCase()+'</span>':'';
       const kind=c.kind==='mistake'?'! Mistake risk':c.kind==='play'?'Recommended':'Read';
-      return '<div class="card '+cls+'"><div class="k">'+chip+kind+'</div><div class="ttl">'+c.ttl+'</div><div class="bd">'+c.bd+'</div></div>';
+      const onMap=(i===0&&c.loc)?'<span class="onmap" title="Marked on the map">&#9673; on map</span>':'';
+      return '<div class="card '+cls+'"><div class="k">'+chip+kind+onMap+'</div><div class="ttl">'+c.ttl+'</div><div class="bd">'+c.bd+'</div></div>';
     }).join(''):'<div class="empty">Set up a situation with the controls or pick a scenario - reads and recommendations appear here.</div>';
 
   const mm=Math.floor(state.t),ssx=Math.round((state.t-mm)*60);
@@ -1642,7 +1658,22 @@ function initTokens(){
   }));
   baronChip=el('div','objchip');dragonChip=el('div','objchip');
   contestedEl=el('div','contested');contestedEl.style.display='none';
-  mapwrap.append(contestedEl,baronChip,dragonChip);
+  macroAlertEl=el('div','macroalert');macroAlertEl.style.display='none';macroAlertEl.textContent='!';
+  mapwrap.append(contestedEl,baronChip,dragonChip,macroAlertEl);
+}
+// point at the champion the single highest-priority macro card is about, if it names one -
+// the visual thread from "read this" to "here's who/where on the map"
+function updateMacroAlert(card){
+  const e=macroAlertEl; if(!e)return;
+  if(!card||!card.loc){ e.style.display='none'; return; }
+  const {side,role}=card.loc;
+  if(state.dead[side][role]){ e.style.display='none'; return; }
+  const p=state.tokens[side][role];
+  e.style.left=(p.x/MAP*100)+'%';
+  e.style.top=(((1-p.y/MAP))*100)+'%';
+  e.className='macroalert '+(card.kind==='mistake'?'mistake':'play');
+  e.title=card.ttl;
+  e.style.display='flex';
 }
 $('undo').addEventListener('click',()=>{stopPlay();if(undoStack.length){state=undoStack.pop();if(!GAME)$('gamepanel').hidden=true;buildControls();syncAll();render();}});
 $('reset').addEventListener('click',()=>{pushUndo();exitGame(true);state=clone(DEFAULT_STATE);[...$('presetrow').children].forEach(c=>c.classList.remove('active'));buildControls();syncAll();render();});
