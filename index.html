@@ -213,6 +213,26 @@ canvas.map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 .sb .r .items i.tr{box-shadow:inset 0 0 0 1px var(--gold-dim)}
 .sb .hint{color:var(--ink-mute);font-size:12px;padding:6px;line-height:1.5}
 
+/* ---------- game timeline (gold/xp graph + key moments) ---------- */
+#tlgraph{width:100%;height:132px;display:block;background:var(--inset);box-shadow:inset 0 0 0 1px var(--edge);cursor:crosshair;touch-action:none}
+.tlleg{display:flex;flex-wrap:wrap;gap:5px 13px;margin:6px 2px 0;font:400 9px/1.4 var(--f-mono);color:var(--ink-mute)}
+.tlleg span{display:flex;align-items:center;gap:4px}
+.tlleg i{display:block}
+.tlleg i.g{width:11px;height:2px;background:var(--gold)}
+.tlleg i.x{width:11px;height:2px;background:var(--edge-lit)}
+.tlleg i.n{width:2px;height:9px;background:var(--ink)}
+.keymoments{margin-top:14px}
+.keymoments h4{font:600 9.5px/1 var(--f-display);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim);margin:0 0 8px}
+.keymoments button{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:9px;align-items:baseline;width:100%;text-align:left;
+  background:var(--inset);box-shadow:inset 0 0 0 1px var(--edge);border:0;color:var(--ink);cursor:pointer;padding:6px 9px;margin-bottom:3px;font:11px/1.3 var(--f-body)}
+.keymoments button:hover{box-shadow:inset 0 0 0 1px var(--edge-lit)}
+.keymoments button .tm{font-family:var(--f-mono);font-size:10px;color:var(--ink-mute);white-space:nowrap}
+.keymoments button .dl{font-family:var(--f-display);font-weight:600;font-size:12px;white-space:nowrap;letter-spacing:.02em}
+.keymoments button .dl.b{color:var(--order)}
+.keymoments button .dl.r{color:var(--chaos)}
+.keymoments button .cz{color:var(--ink-dim);font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.keymoments .none{color:var(--ink-mute);font-size:11px;font-family:var(--f-mono)}
+
 /* ---------- macro read ---------- */
 .macro .card{position:relative;box-shadow:inset 0 0 0 1px var(--edge);border-left:3px solid var(--order);padding:11px 13px;margin-bottom:9px;background:var(--panel-2)}
 .macro .card:last-child{margin-bottom:0}
@@ -354,6 +374,7 @@ a{color:var(--order)}
         <div class="scrubhead">
           <b id="gamename">Game</b><span class="mono" id="scrublabel">0:00</span>
           <button class="btn sm gold" id="resetframe" hidden>&#8624; Reset board</button>
+          <button class="btn sm" id="sharebtn">Share link</button>
           <button class="btn sm" id="loadyours">Load a game</button>
           <button class="btn sm" id="gameexit">Sandbox</button>
         </div>
@@ -381,6 +402,17 @@ a{color:var(--order)}
 
       <div class="panel macro"><h2>Macro read</h2><div class="body" id="macrobody"></div></div>
 
+      <details class="fold" id="timelinefold" open hidden><summary>Game timeline &mdash; gold, XP &amp; key moments</summary>
+        <div class="foldbody">
+          <canvas id="tlgraph" aria-label="Gold and XP lead over the game"></canvas>
+          <div class="tlleg">
+            <span><i class="g"></i>Gold lead</span><span><i class="x"></i>XP lead</span>
+            <span><i class="n"></i>now</span><span class="dim">up = Blue ahead &middot; click to jump</span>
+          </div>
+          <div class="keymoments" id="keymoments"></div>
+        </div>
+      </details>
+
       <details class="fold"><summary>Advantage breakdown</summary>
         <div class="foldbody"><div class="components" id="components"></div></div>
       </details>
@@ -395,6 +427,7 @@ a{color:var(--order)}
           <div class="btnrow">
             <button class="btn" id="undo">&#8624; Undo</button>
             <button class="btn" id="reset">Reset board</button>
+            <button class="btn" id="sharebtn2">Share link</button>
           </div>
         </div>
       </details>
@@ -891,6 +924,7 @@ function render(){
   if(GAME){$('scrublabel').textContent=mm+':'+(ssx<10?'0':'')+ssx;}
 
   drawMap(ev);positionTokens();updateChips(ev);renderScoreboard();
+  if(GAME)drawTimeline();
   bindings.forEach(f=>f());
 }
 
@@ -1230,6 +1264,127 @@ function renderScrubMarks(){
   });
 }
 let _edited=false, _gi=0;
+
+/* ---------- game timeline: per-frame series, graph, key moments ---------- */
+let _seriesGame=null, SERIES=null;
+const EVCOL={dragon:'#33d1e6',elder:'#f4b740',grubs:'#3fca88',baron:'#a674ff',herald:'#6b86ff',inhib:'#ff4b5c',tower:'rgba(150,162,178,.4)'};
+const MLAB={dragon:'Dragon',elder:'Elder',herald:'Herald',grubs:'Grubs',baron:'Baron',inhib:'Inhib',tower:'Tower'};
+const mmss=x=>{const m=Math.floor(x);return m+':'+String(Math.round((x-m)*60)).padStart(2,'0');};
+function buildSeries(){
+  if(!GAME||!GAME.frames)return null;
+  const champs=GAME.champs||{blue:{},red:{}}, keep=state;
+  const out=GAME.frames.map(fr=>{
+    let tmp=mergeDeep(clone(DEFAULT_STATE),{champs:clone(champs)});
+    tmp=mergeDeep(tmp,clone(fr));
+    state=tmp;
+    let net=0; try{ net=computeEval().netEff; }catch(e){}
+    const gold=ROLES.reduce((a,r)=>a+(tmp.laneGold[r]||0),0);
+    const xp=ROLES.reduce((a,r)=>a+(tmp.laneLevel[r]||0),0)*(150+7*tmp.t);
+    return {t:tmp.t,gold,xp,net};
+  });
+  state=keep;
+  return out;
+}
+function drawTimeline(){
+  const c=$('tlgraph'); if(!c||!SERIES||!GAME||$('timelinefold').hidden||!$('timelinefold').open)return;
+  const w=c.clientWidth||300,h=132,dpr=window.devicePixelRatio||1,n=SERIES.length;
+  c.width=w*dpr;c.height=h*dpr;
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  if(n<2)return;
+  const px=6,x0=px,x1=w-px,y0=px,y1=h-px;
+  let dom=3000;SERIES.forEach(p=>{dom=Math.max(dom,Math.abs(p.gold),Math.abs(p.xp));});
+  const X=i=>x0+(x1-x0)*i/(n-1), Y=v=>(y0+y1)/2 - v/dom*((y1-y0)/2);
+  const maxT=SERIES[n-1].t||1;
+  g.strokeStyle='rgba(140,160,180,.22)';g.lineWidth=1;
+  g.beginPath();g.moveTo(x0,Y(0));g.lineTo(x1,Y(0));g.stroke();
+  (GAME.events||[]).forEach(e=>{
+    const xx=x0+(x1-x0)*clamp(e.t/maxT,0,1);
+    g.strokeStyle=EVCOL[e.type]||'rgba(150,160,170,.5)';g.lineWidth=1.5;
+    g.beginPath();g.moveTo(xx,y1);g.lineTo(xx,y1-(e.type==='baron'||e.type==='elder'?9:6));g.stroke();
+  });
+  const line=(key,col,wid)=>{g.strokeStyle=col;g.lineWidth=wid;g.lineJoin='round';g.beginPath();
+    SERIES.forEach((p,i)=>{const xx=X(i),yy=Y(p[key]);i?g.lineTo(xx,yy):g.moveTo(xx,yy);});g.stroke();};
+  line('xp','rgba(120,150,175,.65)',1.5);
+  line('gold','#f4b740',2);
+  const gi=clamp(_gi||0,0,n-1);
+  g.strokeStyle='rgba(238,243,248,.85)';g.lineWidth=1;
+  g.beginPath();g.moveTo(X(gi),y0);g.lineTo(X(gi),y1);g.stroke();
+  g.fillStyle='#eef3f8';g.beginPath();g.arc(X(gi),Y(SERIES[gi].gold),2.6,0,7);g.fill();
+}
+function keyMoments(){
+  if(!SERIES||SERIES.length<3)return [];
+  const N=SERIES.length, d=i=>SERIES[i].net-SERIES[i-1].net;
+  let runs=[],s=1,sign=Math.sign(d(1))||1;
+  for(let i=2;i<N;i++){
+    const g=d(i);
+    if(g!==0&&Math.sign(g)!==sign){ runs.push({a:s-1,b:i-1}); s=i; sign=Math.sign(g); }
+  }
+  runs.push({a:s-1,b:N-1});
+  runs.forEach(r=>{ r.delta=SERIES[r.b].net-SERIES[r.a].net; });
+  return runs.filter(r=>Math.abs(r.delta)>=1500)
+    .sort((x,y)=>Math.abs(y.delta)-Math.abs(x.delta)).slice(0,5)
+    .sort((x,y)=>x.b-y.b);
+}
+function causeText(t0,t1){
+  const evs=(GAME.events||[]).filter(e=>e.t>t0+1e-3&&e.t<=t1+1e-3);
+  const seen=new Set(),parts=[];
+  evs.forEach(e=>{
+    const lab=(MLAB[e.type]||e.type)+(e.team?' '+e.team[0].toUpperCase():'');
+    if(!seen.has(lab)){ seen.add(lab); parts.push(lab); }
+  });
+  return parts.slice(0,3).join(' + ')||'Gold & XP shift';
+}
+function renderKeyMoments(){
+  const host=$('keymoments'); if(!host)return;
+  host.innerHTML='<h4>Biggest swings</h4>';
+  const runs=keyMoments();
+  if(!runs.length){ host.insertAdjacentHTML('beforeend','<div class="none">No decisive swings - the game stayed close throughout.</div>'); return; }
+  runs.forEach(r=>{
+    const dk=r.delta/1000, ahead=dk>=0?'b':'r', nm=dk>=0?'Blue':'Red';
+    const b=el('button');
+    b.innerHTML='<span class="tm">'+mmss(SERIES[r.a].t)+'&rarr;'+mmss(SERIES[r.b].t)+'</span>'
+      +'<span class="dl '+ahead+'">'+(dk>=0?'+':'')+dk.toFixed(1)+'k '+nm+'</span>'
+      +'<span class="cz">'+causeText(SERIES[r.a].t,SERIES[r.b].t)+'</span>';
+    b.addEventListener('click',()=>{ $('scrub').value=r.b; showGame(r.b); });
+    host.appendChild(b);
+  });
+}
+
+/* ---------- shareable deep links ---------- */
+function tagRoute(matchId){
+  const p=((matchId||'').split('_')[0]||'').replace(/[0-9]+$/,'').toUpperCase();
+  if(['EUW','EUNE','TR','RU'].indexOf(p)>=0)return 'europe';
+  if(['KR','JP'].indexOf(p)>=0)return 'asia';
+  if(['OCE','PH','SG','TH','TW','VN'].indexOf(p)>=0)return 'sea';
+  return 'americas';
+}
+function b64state(){
+  const cp={}; // only the sandbox-relevant keys - keeps the link short, drops per-frame board/meta cruft
+  Object.keys(DEFAULT_STATE).forEach(k=>{ if(state[k]!==undefined)cp[k]=clone(state[k]); });
+  if(cp.tokens)for(const sd in cp.tokens)for(const r in cp.tokens[sd]){ const q=cp.tokens[sd][r]; q.x=Math.round(q.x); q.y=Math.round(q.y); }
+  return btoa(unescape(encodeURIComponent(JSON.stringify(cp))));
+}
+function shareURL(){
+  const base=location.origin+location.pathname;
+  if(GAME&&!_edited&&GAME.__src){
+    const mm=Math.floor(state.t);
+    if(GAME.__src==='featured')return base+'?g=featured&t='+mm;
+    if(GAME.__src==='demo')return base+'?g=demo&t='+mm;
+    const id=GAME.meta&&GAME.meta.matchId;
+    if(id)return base+'?g='+encodeURIComponent(id)+'&r='+tagRoute(id)+'&t='+mm;
+  }
+  return base+'?s='+b64state();
+}
+function doShare(btn){
+  const u=shareURL(), label=btn.getAttribute('data-label')||btn.textContent;
+  btn.setAttribute('data-label',label);
+  const snap=u.indexOf('?s=')>=0;
+  const flash=t=>{ btn.textContent=t; setTimeout(()=>{ btn.textContent=label; },1700); };
+  const note=ok=>{ $('importmsg').textContent=(ok?'Link copied - ':'Copy this link - ')+(snap?'exact board snapshot.':'this game moment.')+(ok?'':' ')+(ok?'':u); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(u).then(()=>{ flash('Link copied'); note(true); },()=>{ flash('Copy failed'); note(false); });
+  }else{ flash('Copy failed'); note(false); }
+}
 function markEdited(){ if(GAME&&!_edited){ _edited=true; updateGameName(); } }
 function updateGameName(){
   const mm=Math.floor(state.t),ss=String(Math.round((state.t-mm)*60)).padStart(2,'0');
@@ -1244,26 +1399,38 @@ function showGame(i){
   const sc=$('scrub');sc.max=GAME.frames.length-1;sc.value=i;
   _gi=i; _edited=false; updateGameName();
   if(_marksGame!==GAME){_marksGame=GAME;renderScrubMarks();}
+  if(_seriesGame!==GAME){_seriesGame=GAME;SERIES=buildSeries();renderKeyMoments();}
+  $('timelinefold').hidden=false;
   buildControls();syncAll();render();
 }
 function exitGame(silent){
   if(!GAME&&!silent)return;
-  GAME=null;_marksGame=null;renderScrubMarks();$('gamepanel').hidden=true;
+  GAME=null;_marksGame=null;_seriesGame=null;SERIES=null;
+  renderScrubMarks();$('gamepanel').hidden=true;$('timelinefold').hidden=true;
   if(!silent){state=clone(DEFAULT_STATE);buildControls();syncAll();render();}
 }
 $('scrub').addEventListener('pointerdown',()=>{if(GAME)pushUndo();});
 $('scrub').addEventListener('input',()=>{if(GAME)showGame(+$('scrub').value);});
 $('gameexit').addEventListener('click',()=>exitGame(false));
+$('sharebtn').addEventListener('click',()=>doShare($('sharebtn')));
+$('sharebtn2').addEventListener('click',()=>doShare($('sharebtn2')));
+$('timelinefold').addEventListener('toggle',()=>{ if($('timelinefold').open)drawTimeline(); });
+$('tlgraph').addEventListener('click',ev=>{
+  if(!SERIES||!GAME)return;
+  const r=ev.currentTarget.getBoundingClientRect();
+  const i=Math.round(clamp((ev.clientX-r.left)/r.width,0,1)*(SERIES.length-1));
+  $('scrub').value=i; showGame(i);
+});
 $('resetframe').addEventListener('click',()=>{ if(GAME){ pushUndo(); showGame(_gi); } });
 $('loadyours').addEventListener('click',()=>{
   const f=$('loadfold'); f.open=true;
   f.scrollIntoView({behavior:'smooth',block:'center'});
   setTimeout(()=>{ const i=$('riotid'); i&&i.focus(); },350);
 });
-$('loadsample').addEventListener('click',()=>{pushUndo();GAME={champs:SAMPLE.champs,frames:SAMPLE.frames,meta:SAMPLE.meta,events:SAMPLE.events};showGame(Math.min(13,SAMPLE.frames.length-1));$('importmsg').textContent='Loaded sample game - scrub the timeline above the map.';});
+$('loadsample').addEventListener('click',()=>{pushUndo();GAME={champs:SAMPLE.champs,frames:SAMPLE.frames,meta:SAMPLE.meta,events:SAMPLE.events};GAME.__src='demo';showGame(Math.min(13,SAMPLE.frames.length-1));$('importmsg').textContent='Loaded sample game - scrub the timeline above the map.';});
 $('loadmine').addEventListener('click',()=>{
   if(!MYGAME||!MYGAME.frames){$('importmsg').textContent='No featured game bundled - load one from the panel above.';return;}
-  pushUndo();GAME={champs:MYGAME.champs,frames:MYGAME.frames,meta:MYGAME.meta,events:MYGAME.events};
+  pushUndo();GAME={champs:MYGAME.champs,frames:MYGAME.frames,meta:MYGAME.meta,events:MYGAME.events};GAME.__src='featured';
   showGame(Math.floor(MYGAME.frames.length/2));
   $('importmsg').textContent='Loaded the featured game. Scrub the slider under the map.';
 });
@@ -1271,6 +1438,7 @@ $('loadmine').addEventListener('click',()=>{
 /* ---------- import / export ---------- */
 function loadGameFile(j){
   pushUndo();GAME={champs:j.champs||{blue:{},red:{}},frames:j.frames,meta:j.meta||{},events:j.events||[]};
+  GAME.__src='import';
   showGame(Math.floor(j.frames.length/2));
   const y=j.meta&&j.meta.you;
   $('importmsg').textContent='Loaded '+((j.meta&&j.meta.name)||j.frames.length+' frames')+(y?' - your team is '+y.side.toUpperCase()+' ('+y.champ+')':'')+'. Scrub above the map.';
@@ -1380,7 +1548,49 @@ initChampList();initTokens();buildControls();buildPresets();initRiotBox();render
 // first-run intro banner (dismissible, remembered per browser)
 try{ if(!localStorage.getItem('rt.introSeen')) $('intro').hidden=false; }catch(e){ $('intro').hidden=false; }
 $('introx').addEventListener('click',()=>{ $('intro').hidden=true; try{ localStorage.setItem('rt.introSeen','1'); }catch(e){} });
-// open on a live game so the board, scoreboard and reads are populated from the first frame
-try{ if(MYGAME&&MYGAME.frames){ GAME={champs:MYGAME.champs,frames:MYGAME.frames,meta:MYGAME.meta,events:MYGAME.events}; showGame(Math.floor(MYGAME.frames.length/2)); } }catch(e){}
+// open on a live game so the board, scoreboard and reads are populated from the first frame.
+// a ?s= / ?g= query (shared deep link) wins over the default featured game.
+function nearestFrame(frames,min){let bi=0,bd=1e9;frames.forEach((f,i)=>{const d=Math.abs(f.t-min);if(d<bd){bd=d;bi=i;}});return bi;}
+function openBundled(src,min){
+  const G=src==='demo'?SAMPLE:MYGAME;
+  if(!G||!G.frames)return false;
+  GAME={champs:G.champs,frames:G.frames,meta:G.meta,events:G.events||[]}; GAME.__src=src;
+  showGame(min==null?Math.floor(G.frames.length/2):nearestFrame(G.frames,+min));
+  return true;
+}
+(function bootstrap(){
+  let q; try{ q=new URLSearchParams(location.search); }catch(e){ q=null; }
+  const snap=q&&q.get('s'), gl=q&&q.get('g');
+  if(snap){
+    try{
+      const o=JSON.parse(decodeURIComponent(escape(atob(snap))));
+      if(o&&typeof o==='object'){
+        state=mergeDeep(clone(DEFAULT_STATE),o);
+        buildControls();syncAll();render();
+        $('loadfold').open=true;
+        $('importmsg').textContent='Loaded a shared board snapshot. Adjust the controls, then Share link to pass it on.';
+        return;
+      }
+    }catch(e){}
+  }
+  if(gl){
+    if(gl==='featured'||gl==='demo'){ if(openBundled(gl,q.get('t')))return; }
+    else if(IMPORT_API){
+      const base=IMPORT_API.replace(/\/+$/,''), r=q.get('r')||tagRoute(gl), t=q.get('t');
+      fetch(base+'/api/game?matchId='+encodeURIComponent(gl)+'&region='+encodeURIComponent(r))
+        .then(x=>x.json())
+        .then(j=>{ if(!j||!j.frames)throw 0;
+          loadGameFile(j);
+          if(t!=null){ const i=nearestFrame(GAME.frames,+t); $('scrub').value=i; showGame(i); } })
+        .catch(()=>{ openBundled('featured'); $('importmsg').textContent='Could not load that shared game - showing the featured game instead.'; });
+      return;
+    }else{
+      openBundled('featured');
+      $('importmsg').textContent='That link points to an imported game. Open it on the live site, or paste the game file.';
+      return;
+    }
+  }
+  try{ openBundled('featured'); }catch(e){}
+})();
 })();
 </script>
