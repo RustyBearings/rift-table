@@ -123,19 +123,19 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
 /* ---------- eval strip ---------- */
 .evalstrip{
   position:relative;background:var(--panel);box-shadow:inset 0 0 0 1px var(--edge);--seam:var(--gold);
-  padding:12px 15px 13px;
+  padding:9px 15px 10px;
   clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch));
 }
 .evalstrip::before{content:"";position:absolute;top:0;left:var(--notch);right:0;height:2px;background:var(--seam)}
 .er{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px}
 /* fixed height so the read wrapping 1<->2 lines while scrubbing never nudges the map */
-.ec{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-top:9px;min-height:31px}
-.evalnum{font-family:var(--f-display);font-weight:700;font-size:30px;line-height:.9;letter-spacing:.005em;font-variant-numeric:tabular-nums;min-width:74px}
+.ec{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-top:6px;min-height:31px}
+.evalnum{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1;letter-spacing:.005em;font-variant-numeric:tabular-nums;min-width:68px}
 .evalread{font-family:var(--f-body);font-size:13px;font-weight:500;line-height:1.35;color:var(--ink);flex:1;min-width:0;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .split{font-family:var(--f-display);font-size:13px;font-weight:600;color:var(--ink-dim);letter-spacing:.07em;white-space:nowrap}
 .bar{
-  position:relative;height:30px;overflow:hidden;background:var(--chaos);
+  position:relative;height:26px;overflow:hidden;background:var(--chaos);
   box-shadow:inset 0 0 0 1px var(--edge-lit), inset 0 8px 18px rgba(0,0,0,.35);
 }
 .bar .blue{position:absolute;inset:0 auto 0 0;background:linear-gradient(180deg,#40dbef,#219fb4);box-shadow:2px 0 0 var(--gold),4px 0 12px rgba(244,183,64,.5);transition:width .34s cubic-bezier(.4,0,.2,1)}
@@ -150,7 +150,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
 .compbar b{color:var(--ink);font-weight:600;font-family:var(--f-display);letter-spacing:.04em}
 
 /* ---------- game scrubber strip (its own panel, sits above the map) ---------- */
-.scrubstrip{background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--edge);padding:9px 13px 11px;
+.scrubstrip{background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--edge);padding:7px 13px 8px;
   clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
 .scrubstrip .scrubhead{display:flex;align-items:center;gap:10px;margin-bottom:7px}
 .scrubstrip .scrubhead b{font-family:var(--f-display);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase}
@@ -198,7 +198,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
    filtered map layer in the artifact sandbox */
 .mappanel{clip-path:none}
 .mappanel::before{left:0}
-.mappanel>.body{padding:10px}
+.mappanel>.body{padding:7px}
 .mapwrap{position:relative;width:100%;max-width:min(100%,74vh);margin-inline:auto;aspect-ratio:1/1;overflow:hidden;background:var(--inset);box-shadow:inset 0 0 0 1px var(--edge);touch-action:none;
   background-image:var(--map-img);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
 .mapwrap::before{content:"";position:absolute;inset:0;background:var(--map-img) center/100% 100% no-repeat;filter:saturate(.62) brightness(.6) contrast(1.06);z-index:0}
@@ -242,14 +242,14 @@ canvas.map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 .sb .teamrow{
   display:flex;justify-content:space-between;align-items:center;
   font:600 10px/1 var(--f-display);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);
-  padding:4px 10px;margin:5px 0 1px;
+  padding:3px 10px;margin:0 0 1px;
   clip-path:polygon(0 0,100% 0,100% 100%,10px 100%,0 calc(100% - 10px));
 }
 .sb .teamrow:first-child{margin-top:0}
 .sb .teamrow.blue{background:linear-gradient(90deg,rgba(51,209,230,.2),rgba(51,209,230,.03))}
 .sb .teamrow.red{background:linear-gradient(90deg,rgba(255,75,92,.2),rgba(255,75,92,.03))}
 .sb .teamrow b{color:var(--ink);font-family:var(--f-mono);letter-spacing:.02em;font-weight:500;font-size:11px}
-.sb .strucrow{display:flex;gap:11px;padding:0 10px 3px;flex-wrap:wrap}
+.sb .strucrow{display:flex;gap:11px;padding:0 10px 2px;flex-wrap:wrap}
 .sb .strucrow.blue{--sc:var(--order)}.sb .strucrow.red{--sc:var(--chaos)}
 .sb .strucrow .sl{display:flex;align-items:center;gap:3px}
 .sb .strucrow .sl em{font:600 8px/1 var(--f-mono);font-style:normal;color:var(--ink-mute);margin-right:2px;letter-spacing:.05em}
@@ -398,13 +398,17 @@ footer .fineprint{max-width:78ch}
 .fineprint{font-size:10px;color:var(--ink-mute);line-height:1.6;margin-top:16px;padding-top:12px;border-top:1px solid var(--edge);max-width:100%}
 a{color:var(--order)}
 ::selection{background:rgba(244,183,64,.28)}
-.intro{position:relative;background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--edge-lit);--seam:var(--gold);
-  padding:12px 40px 13px 15px;font-size:12.5px;line-height:1.55;color:var(--ink-dim);
+/* help lives in a floating "?" button so the how-to-use copy never eats layout space */
+.helpfab{position:fixed;right:20px;bottom:20px;width:42px;height:42px;border-radius:50%;
+  background:var(--gold);color:#150f02;font:700 19px/1 var(--f-display);border:0;cursor:pointer;
+  box-shadow:0 4px 16px rgba(0,0,0,.45);z-index:60}
+.helpfab:hover{background:#ffca55}
+.helppop{position:fixed;right:20px;bottom:72px;z-index:60;width:min(360px,calc(100vw - 40px));
+  background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--edge-lit),0 10px 30px rgba(0,0,0,.5);
+  padding:14px 16px;font-size:12.5px;line-height:1.55;color:var(--ink-dim);
   clip-path:polygon(10px 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%,0 10px)}
-.intro::before{content:"";position:absolute;top:0;left:10px;right:0;height:2px;background:var(--gold)}
-.intro b{color:var(--ink)}
-.intro button{position:absolute;top:8px;right:8px;background:transparent;border:0;color:var(--ink-mute);cursor:pointer;font:600 10px/1 var(--f-display);letter-spacing:.1em;padding:5px}
-.intro button:hover{color:var(--gold)}
+.helppop::before{content:"";position:absolute;top:0;left:10px;right:0;height:2px;background:var(--gold)}
+.helppop b{color:var(--ink)}
 
 /* ---------- phones ---------- */
 @media(max-width:560px){
@@ -472,7 +476,8 @@ a{color:var(--order)}
   .keymoments button .dl{grid-area:dl;justify-self:end}
   .keymoments button .cz{grid-area:cz;white-space:normal}
 
-  .intro{padding:11px 46px 12px 12px;font-size:11.5px}
+  .helpfab{right:14px;bottom:14px;width:38px;height:38px;font-size:17px}
+  .helppop{right:14px;bottom:62px;font-size:11.5px}
   .presetrow{gap:7px}
 
   /* Load-a-game: full-width "Find games" button under the id + region */
@@ -511,10 +516,6 @@ a{color:var(--order)}
     </div>
 
     <div class="col-main">
-      <div class="intro" id="intro" hidden>
-        This replays a real game minute by minute. <b>Drag the slider</b> to move through it (markers = dragons, baron, grubs&hellip; click one to jump). <b>Drag champion icons</b> to test a rotation, or <b>right-click a champion</b> to kill it and read the 4v5. The side panels react &mdash; gold lead, next play, scoreboard, structures. <b>Load a game</b> swaps in your own.
-        <button id="introx" aria-label="Dismiss">GOT IT</button>
-      </div>
       <div class="evalstrip">
         <div class="er">
           <span class="evalnum" id="evalnum">+0.0k</span>
@@ -624,6 +625,11 @@ a{color:var(--order)}
       <p class="fineprint">Rift Table was created under Riot Games&rsquo; &ldquo;Legal Jibber Jabber&rdquo; policy using assets owned by Riot Games. Riot Games does not endorse or sponsor this project. Rift Table isn&rsquo;t endorsed by Riot Games and doesn&rsquo;t reflect the views or opinions of Riot Games or anyone officially involved in producing or managing League of Legends. League of Legends and Riot Games are trademarks or registered trademarks of Riot Games, Inc. Match data is retrieved from the Riot Games API. Champion and item art &copy; Riot Games.</p>
     </footer>
   </div>
+</div>
+
+<button class="helpfab" id="helpbtn" aria-label="How to use Rift Table" aria-expanded="false" title="How to use Rift Table">?</button>
+<div class="helppop" id="helppop" hidden>
+  This replays a real game minute by minute. <b>Drag the slider</b> to move through it (markers = dragons, baron, grubs&hellip; click one to jump). <b>Drag champion icons</b> to test a rotation, or <b>right-click a champion</b> to kill it and read the 4v5. The side panels react &mdash; gold lead, next play, scoreboard, structures. <b>Load a game</b> swaps in your own.
 </div>
 
 <datalist id="champlist"></datalist>
@@ -1749,9 +1755,15 @@ function initRiotBox(){
 mapwrap.style.setProperty('--map-img','url('+MAP_URI+')');
 $('scriptsrc').textContent=SCRIPT_SRC;
 initChampList();initTokens();buildControls();buildPresets();initRiotBox();render();
-// first-run intro banner (dismissible, remembered per browser)
-try{ if(!localStorage.getItem('rt.introSeen')) $('intro').hidden=false; }catch(e){ $('intro').hidden=false; }
-$('introx').addEventListener('click',()=>{ $('intro').hidden=true; try{ localStorage.setItem('rt.introSeen','1'); }catch(e){} });
+// how-to-use lives behind a floating "?" so it never eats layout space
+$('helpbtn').addEventListener('click',()=>{
+  const p=$('helppop'), willOpen=p.hidden;
+  p.hidden=!willOpen; $('helpbtn').setAttribute('aria-expanded',String(willOpen));
+});
+document.addEventListener('click',e=>{
+  const p=$('helppop'),b=$('helpbtn');
+  if(!p.hidden && e.target!==b && !p.contains(e.target)){ p.hidden=true; b.setAttribute('aria-expanded','false'); }
+});
 // open on a live game so the board, scoreboard and reads are populated from the first frame.
 // a ?s= / ?g= query (shared deep link) wins over the default featured game.
 function nearestFrame(frames,min){let bi=0,bd=1e9;frames.forEach((f,i)=>{const d=Math.abs(f.t-min);if(d<bd){bd=d;bi=i;}});return bi;}
