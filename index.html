@@ -56,6 +56,14 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
 .col-main{display:flex;flex-direction:column;gap:14px;min-width:0;position:sticky;top:16px}
 .col-side{display:flex;flex-direction:column;gap:14px;min-width:0}
 @media(max-width:1040px){.col-main{position:static}}
+/* desktop: pin the whole map column inside the viewport so it never scrolls out of
+   view and can't be nudged by the side panels changing height while you scrub */
+@media(min-width:1041px){
+  .col-main{height:calc(100vh - 32px)}
+  .col-main .mappanel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+  .col-main .mappanel>.body{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center}
+  .col-main .mapwrap{width:auto;height:100%;max-width:100%;max-height:100%;min-height:280px;margin:0;aspect-ratio:1/1}
+}
 
 .panel{
   position:relative;background:var(--panel);box-shadow:inset 0 0 0 1px var(--edge);
@@ -1049,7 +1057,7 @@ function renderScoreboard(){
 }
 
 function drawMap(ev){
-  const size=mapwrap.clientWidth||480,dpr=window.devicePixelRatio||1;
+  const size=Math.min(mapwrap.clientWidth,mapwrap.clientHeight)||480,dpr=window.devicePixelRatio||1;
   cv.width=size*dpr;cv.height=size*dpr;
   const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);
   const W=size,H=size;g.clearRect(0,0,W,H);
@@ -1565,6 +1573,11 @@ $('reset').addEventListener('click',()=>{pushUndo();exitGame(true);state=clone(D
 $('ioload').addEventListener('click',doImport);
 $('ioexport').addEventListener('click',()=>{$('io').value=JSON.stringify(state,null,1);$('importmsg').textContent='Current state exported below.';});
 window.addEventListener('resize',()=>schedule());
+// the map now flexes to fill the pinned column - redraw whenever its box actually changes
+// (viewport resize, intro banner dismissal, font load) so the canvas never renders stale
+if(window.ResizeObserver){ let _mw=0,_mh=0; new ResizeObserver(es=>{
+  const r=es[0].contentRect; if(Math.abs(r.width-_mw)>1||Math.abs(r.height-_mh)>1){_mw=r.width;_mh=r.height;schedule();}
+}).observe(mapwrap); }
 
 /* ---------- hosted-only: fetch games by Riot ID via the import API ---------- */
 function initRiotBox(){
