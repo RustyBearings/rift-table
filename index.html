@@ -138,16 +138,14 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
 .compbar .dot.b{background:var(--order)}.compbar .dot.r{background:var(--chaos)}
 .compbar b{color:var(--ink);font-weight:600;font-family:var(--f-display);letter-spacing:.04em}
 
-/* ---------- game scrubber, now a broadcast overlay bar on the map itself ---------- */
-.mapscrub{position:absolute;top:0;left:0;right:0;z-index:11;padding:9px 11px 10px;
-  background:linear-gradient(180deg,rgba(5,8,12,.92) 0%,rgba(5,8,12,.8) 55%,rgba(5,8,12,0) 100%)}
-.mapscrub .scrubhead{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-bottom:6px}
-.mapscrub .scrubhead b{font-family:var(--f-display);font-size:12px;letter-spacing:.03em;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:36%}
-.mapscrub .scrubhead .mono{color:var(--gold);font-size:11.5px;font-family:var(--f-display);font-weight:600;white-space:nowrap}
-.mapscrub .scrubhead #loadyours{margin-left:auto}
-.mapscrub .scrubhead .btn.sm{padding:4px 8px;font-size:9px}
-.mapscrub #scrub{width:100%;margin-top:1px}
-.mapscrub .scrubmarks{margin-top:1px}
+/* ---------- game scrubber strip (its own panel, sits above the map) ---------- */
+.scrubstrip{background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--edge);padding:9px 13px 11px;
+  clip-path:polygon(9px 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%,0 9px)}
+.scrubstrip .scrubhead{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.scrubstrip .scrubhead b{font-family:var(--f-display);font-size:12.5px;letter-spacing:.06em;text-transform:uppercase}
+.scrubstrip .scrubhead .mono{color:var(--gold);font-size:13px;font-family:var(--f-display);font-weight:600}
+.scrubstrip .scrubhead #loadyours{margin-left:auto}
+.scrubstrip .scrubhead .btn.sm{padding:5px 9px}
 .scrubmarks{position:relative;height:13px;margin:2px 7px 0}
 .scrubmarks .pip{position:absolute;top:2px;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;
   background:var(--ink-mute);box-shadow:0 0 0 1.5px var(--ring,var(--edge-lit)),0 0 0 3px var(--void);cursor:pointer}
@@ -160,9 +158,7 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
 .scrubmarks .pip.t-herald{background:#6b86ff;border-radius:1px;transform:translateX(-50%) rotate(45deg)}
 .scrubmarks .pip.t-inhib{background:var(--chaos);width:3px;height:11px;border-radius:1px;top:1px}
 .scrubmarks .pip .cnt{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font:700 7px/1 var(--f-mono);color:var(--ink)}
-.scrubleg{position:absolute;left:0;right:0;bottom:0;z-index:9;display:flex;flex-wrap:wrap;gap:4px 11px;
-  margin:0;padding:13px 11px 7px;font:400 9px/1.4 var(--f-mono);color:var(--ink-mute);
-  background:linear-gradient(0deg,rgba(5,8,12,.88) 0%,rgba(5,8,12,0) 100%)}
+.scrubleg{display:flex;flex-wrap:wrap;gap:4px 11px;margin:5px 7px 0;font:400 9px/1.4 var(--f-mono);color:var(--ink-mute)}
 .scrubleg span{display:flex;align-items:center;gap:4px}
 .scrubleg .dim{color:var(--ink-mute);opacity:.7}
 .scrubleg .lg{width:7px;height:7px;border-radius:50%;background:var(--ink-mute);flex:none}
@@ -190,8 +186,8 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
 /* the board panel stays an un-clipped rectangle: an ancestor clip-path was hiding the
    filtered map layer in the artifact sandbox */
 .mappanel{clip-path:none}
-.mappanel::before{left:0;z-index:12}
-.mappanel>.body{padding:7px}
+.mappanel::before{left:0}
+.mappanel>.body{padding:10px}
 .mapwrap{position:relative;width:100%;max-width:min(100%,74vh);margin-inline:auto;aspect-ratio:1/1;overflow:hidden;background:var(--inset);box-shadow:inset 0 0 0 1px var(--edge);touch-action:none;
   background-image:var(--map-img);background-size:100% 100%;background-position:center;background-repeat:no-repeat}
 .mapwrap::before{content:"";position:absolute;inset:0;background:var(--map-img) center/100% 100% no-repeat;filter:saturate(.62) brightness(.6) contrast(1.06);z-index:0}
@@ -414,11 +410,8 @@ a{color:var(--order)}
   .panel>.body{padding:12px}
   .fold>summary{padding:12px}
   .fold .foldbody{padding:12px}
-  .mappanel>.body{padding:6px}
+  .mappanel>.body{padding:8px}
   .mapwrap{max-width:100%}
-  .mapscrub{padding:7px 8px 8px}
-  .mapscrub .scrubhead b{max-width:30%}
-  .scrubleg{padding:11px 8px 6px;font-size:8.5px}
 
   /* eval strip: number + split on one line, full-width bar beneath */
   .evalstrip{padding:11px 12px 12px}
@@ -429,10 +422,12 @@ a{color:var(--order)}
   .ec{flex-direction:column;gap:6px;margin-top:9px}
   .compbar{align-items:flex-start}
 
-  /* scrub overlay: game name gets its own line, controls wrap below it, still on the map */
-  .mapscrub .scrubhead #gamename{flex-basis:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:100%}
-  .mapscrub .scrubhead #loadyours{margin-left:0}
-  .mapscrub .scrubhead .btn.sm{padding:6px 9px;font-size:9px}
+  /* scrubber: game name gets its own line, controls wrap below it */
+  .scrubstrip{padding:10px 11px 12px}
+  .scrubstrip .scrubhead{flex-wrap:wrap;gap:8px}
+  .scrubstrip .scrubhead #gamename{flex-basis:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .scrubstrip .scrubhead #loadyours{margin-left:0}
+  .scrubstrip .scrubhead .btn.sm{padding:8px 11px;font-size:10px}
   .scrubmarks{height:16px}
   .scrubmarks .pip{width:11px;height:11px;top:2px}
   .scrubmarks .pip.t-elder,.scrubmarks .pip.t-baron{width:13px;height:13px}
@@ -521,35 +516,32 @@ a{color:var(--order)}
         </div>
       </div>
 
-      <div class="panel" id="sbpanel" hidden>
-        <h2>Scoreboard <span id="sbtime" class="mono">0:00</span></h2>
-        <div class="body"><div class="sb" id="sbbody"></div></div>
+      <div class="scrubstrip" id="gamepanel" hidden>
+        <div class="scrubhead">
+          <b id="gamename">Game</b><span class="mono" id="scrublabel">0:00</span>
+          <button class="btn sm gold" id="resetframe" hidden>&#8624; Reset board</button>
+          <button class="btn sm" id="playbtn" title="Space to play/pause, arrow keys to step">&#9654; Play</button>
+          <button class="btn sm" id="sharebtn">Share link</button>
+          <button class="btn sm" id="loadyours">Load a game</button>
+          <button class="btn sm" id="gameexit">Sandbox</button>
+        </div>
+        <input type="range" id="scrub" min="0" max="1" step="1" value="0" aria-label="Game minute">
+        <div class="scrubmarks" id="scrubmarks"></div>
+        <div class="scrubleg" id="scrubleg" hidden>
+          <span><i class="lg t-dragon"></i>Dragon</span><span><i class="lg t-elder"></i>Elder</span>
+          <span><i class="lg t-herald"></i>Herald</span><span><i class="lg t-grubs"></i>Grubs</span>
+          <span><i class="lg t-baron"></i>Baron</span><span><i class="lg t-inhib"></i>Inhib</span>
+          <span class="dim">ring = who took it &middot; click a marker to jump</span>
+        </div>
       </div>
 
       <div class="panel mappanel">
-        <div class="body">
-          <div class="mapwrap" id="mapwrap">
-            <canvas class="map" id="mapcanvas"></canvas>
-            <div class="mapscrub" id="gamepanel" hidden>
-              <div class="scrubhead">
-                <b id="gamename">Game</b><span class="mono" id="scrublabel">0:00</span>
-                <button class="btn sm gold" id="resetframe" hidden title="Reset board">&#8624;</button>
-                <button class="btn sm" id="playbtn" title="Space to play/pause, arrow keys to step">&#9654; Play</button>
-                <button class="btn sm" id="sharebtn" title="Copy a shareable link">Share</button>
-                <button class="btn sm" id="loadyours">Load a game</button>
-                <button class="btn sm" id="gameexit">Sandbox</button>
-              </div>
-              <input type="range" id="scrub" min="0" max="1" step="1" value="0" aria-label="Game minute">
-              <div class="scrubmarks" id="scrubmarks"></div>
-            </div>
-            <div class="scrubleg" id="scrubleg" hidden>
-              <span><i class="lg t-dragon"></i>Dragon</span><span><i class="lg t-elder"></i>Elder</span>
-              <span><i class="lg t-herald"></i>Herald</span><span><i class="lg t-grubs"></i>Grubs</span>
-              <span><i class="lg t-baron"></i>Baron</span><span><i class="lg t-inhib"></i>Inhib</span>
-              <span class="dim">ring = who took it &middot; click a marker to jump</span>
-            </div>
-          </div>
-        </div>
+        <div class="body"><div class="mapwrap" id="mapwrap"><canvas class="map" id="mapcanvas"></canvas></div></div>
+      </div>
+
+      <div class="panel" id="sbpanel" hidden>
+        <h2>Scoreboard <span id="sbtime" class="mono">0:00</span></h2>
+        <div class="body"><div class="sb" id="sbbody"></div></div>
       </div>
     </div>
 
