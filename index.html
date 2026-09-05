@@ -81,52 +81,66 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
 #sbpanel-blue{grid-area:scoreL}
 #sbpanel-red{grid-area:scoreR}
 /* extra breathing room before the footer so it never reads as jammed against the map */
-.layout>footer{grid-area:footer;margin-top:30px}
+/* z-index + opaque background: the map and scoreboard columns are position:sticky and stay
+   pinned while the footer's row scrolls up into the viewport, so without this the pinned
+   columns paint on top of the footer and their content bleeds through it */
+.layout>footer{grid-area:footer;margin-top:30px;position:relative;z-index:5;background:var(--void)}
 
+/* ---- desktop A: 1281-1559. Four tracks - rails either side, the map spanning two middle
+   columns with the two scoreboards side by side underneath it. The 5-column flanking layout
+   does NOT work in this band: the four side tracks take their max widths first and starve
+   the 1fr centre (measured 204px of map at a 1300px window), so the map only flanks once
+   there's genuinely room for it (see desktop B below). */
 @media(min-width:1281px){
   .layout{
-    /* the two scoreboard strips flank the map directly, like a broadcast HUD, instead of
-       stacking under it - frees the ~230px they used to cost out of the map's vertical
-       budget entirely */
-    grid-template-columns:minmax(230px,280px) minmax(150px,200px) minmax(0,1fr) minmax(150px,200px) minmax(230px,280px);
-    grid-template-areas:"left scoreL center scoreR right" "footer footer footer footer footer";
+    grid-template-columns:minmax(210px,260px) minmax(0,1fr) minmax(0,1fr) minmax(210px,260px);
+    grid-template-areas:"left center center right" "left scoreL scoreR right" "footer footer footer footer";
     gap:16px;align-items:start;
+  }
+  /* Pin the map column in the viewport so it never scrolls out of view and can't be nudged
+     by the side panels changing height while you scrub. Sticky range is (row height - the
+     column's own height), so col-left must stay comfortably taller than col-main or the map
+     unpins mid-page; col-left's own height swings ~900-1300px with the macro card count, so
+     floor it. Only while a game is loaded - in sandbox col-left is naturally short and the
+     floor would just leave a large empty gap with nothing to scroll to. */
+  .col-main{position:sticky;top:16px;height:calc(100vh - 32px)}
+  .layout:has(#gamepanel:not([hidden])) .col-left{min-height:calc(100vh - 32px + 280px)}
+  .col-main .mappanel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+  .col-main .mappanel>.body{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center}
+  /* no min-height here: it would override the exact square height fitMapSquare() sets and
+     produce a NON-square map (measured 200x280). The JS already floors the size at 200px. */
+  .col-main .mapwrap{margin:0;max-width:none;max-height:none;flex:0 0 auto}
+}
+
+/* ---- desktop B: 1560+. Now there's room to put the scoreboards beside the map. */
+@media(min-width:1560px){
+  .layout{
+    grid-template-columns:minmax(230px,280px) minmax(160px,200px) minmax(0,1fr) minmax(160px,200px) minmax(230px,280px);
+    grid-template-areas:"left scoreL center scoreR right" "footer footer footer footer footer";
   }
   /* sandbox mode has no scoreboard content - collapse those two columns to 0 instead of
      leaving big empty gaps flanking the map, and let the map (1fr) reclaim the space */
   .layout:not(:has(#gamepanel:not([hidden]))){
     grid-template-columns:minmax(230px,280px) 0 minmax(0,1fr) 0 minmax(230px,280px);
   }
-  /* pin the map column inside the viewport so it never scrolls out of view and can't
-     be nudged by the side panels changing height while you scrub. This only works while
-     col-main's row is taller than col-main itself - the sticky range is (row height -
-     868px). Now that Board controls/Scenarios/Load-a-game (col-right) are collapsed by
-     default and the footer is trimmed, col-left (macro read + timeline + breakdown,
-     which varies ~900-1300px as the macro card count changes per frame) is the only
-     thing keeping that row tall - on a sparse frame it can dip close to col-main's own
-     height, leaving near-zero stick range and unpinning mid-page. Floor col-left's
-     height well above col-main's so the row is always comfortably taller. */
-  .col-main{position:sticky;top:16px;height:calc(100vh - 32px)}
-  /* only floor col-left's height while a game is loaded (scrub strip visible) - in sandbox
-     mode col-left is naturally short and flooring it would leave a big awkward empty gap
-     with nothing to scroll to anyway */
-  .layout:has(#gamepanel:not([hidden])) .col-left{min-height:calc(100vh - 32px + 280px)}
-  .col-main .mappanel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
-  .col-main .mappanel>.body{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center}
-  /* width/height are set in px by fitMapSquare() (JS) - no max-width/height clamp here, since
-     that would double-clamp against the already-computed exact size (a max-width:100% here
-     resolves against the parent's PADDING box, ~14px narrower than the content box the JS
-     math uses, so an explicit 664px would get silently shrunk back down to 650) */
-  .col-main .mapwrap{min-height:280px;margin:0;max-width:none;max-height:none;flex:0 0 auto}
-  /* stretch the scoreboard strips to match the map's height instead of just sitting at
-     their natural (shorter) content height - overflow:auto is a safety net in case a
-     frame's content is ever taller than the available space (shouldn't normally happen) */
+  /* Scoreboard strips match the map's height so the three columns line up. If the content
+     genuinely needs more room than the window gives (short window + full 6-item builds on
+     all 5 players) the BODY scrolls - it must never overflow the panel, because an
+     overflowing row paints on top of the row below it. */
   #sbpanel-blue,#sbpanel-red{position:sticky;top:16px;height:calc(100vh - 32px);display:flex;flex-direction:column}
   #sbpanel-blue>.body,#sbpanel-red>.body{flex:1 1 auto;min-height:0;overflow-y:auto}
-  /* only here (not mobile/tablet, where the panel has no forced height to share) let the
-     player rows grow to fill it, instead of leaving dead space below a short list */
   .sb.solo{height:100%}
-  .sb.solo .r{flex:1 1 0;min-height:0}
+  /* `flex:1 1 auto` (grow into spare height) with an EXPLICIT min-height floor is the whole
+     fix. The old `flex:1 1 0;min-height:0` did the opposite: basis 0 forced every row to
+     exactly 1/5 of the panel and min-height:0 let it shrink under its own content - fine at
+     a 1000px-tall window (179px/row, 170px needed), but at 780px (135px/row) 35px of item
+     grid spilled onto the next player. The floor must be explicit rather than left to
+     `auto`, because the row carries overflow:hidden as a bleed guard and per spec any flex
+     item with overflow != visible has its automatic minimum resolve to 0 - which silently
+     re-enables the squeezing. Also deliberately NOT using justify-content:space-evenly to
+     spread slack: once content overflows, space-* centring pushes the top of the list above
+     the scroll origin where it can't be reached. */
+  .sb.solo .r{flex:1 1 auto;min-height:min-content}
 }
 
 .panel{
@@ -281,24 +295,34 @@ canvas.map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 .sb .strucrow .sl i{width:6px;height:6px;border-radius:50%;background:var(--sc);display:block}
 .sb .strucrow .sl i.inh{border-radius:1px;transform:rotate(45deg)}
 .sb .strucrow .sl i.dn{background:transparent;box-shadow:inset 0 0 0 1px var(--sc);opacity:.45}
-/* broadcast-HUD player row: portrait/name/KDA/gold on one line, the item build wraps onto
-   its own line below (flex-wrap + items at flex-basis:100% forces the break) */
-.sb .r{display:flex;flex-wrap:wrap;align-content:center;align-items:center;gap:7px 8px;padding:8px 6px;min-width:0}
+/* Player row is an EXPLICIT grid, never flex-wrap. Wrapping was emergent: when the column
+   was a few px narrow the gold chip silently jumped to its own line, so you couldn't tell
+   which gold belonged to which player. Declared areas can't do that at any width.
+      pt  name  kda
+      pt  gold  gold
+      items items items
+   overflow:hidden is a hard guarantee: even if a future change makes content too tall for
+   its box, it clips instead of painting over the row below. */
+.sb .r{
+  display:grid;grid-template-columns:34px minmax(0,1fr) auto;
+  grid-template-areas:"pt name kda" "pt gold gold" "items items items";
+  column-gap:8px;row-gap:3px;padding:8px 6px;min-width:0;overflow:hidden;
+}
 .sb .r.blue{box-shadow:inset 2px 0 0 rgba(51,209,230,.55)}
 .sb .r.red{box-shadow:inset 2px 0 0 rgba(255,75,92,.55)}
 .sb .r:hover{background:var(--panel-2)}
-.sb .r .pt{flex:none;width:34px;height:34px;border-radius:5px;background:var(--inset) no-repeat;box-shadow:inset 0 0 0 1px var(--edge)}
-.sb .r .cn{flex:1 1 auto;min-width:16px;font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb .r .pt{grid-area:pt;align-self:start;width:34px;height:34px;border-radius:5px;background:var(--inset) no-repeat;box-shadow:inset 0 0 0 1px var(--edge)}
+.sb .r .cn{grid-area:name;align-self:center;min-width:0;font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb .r .cn small{display:none}
-.sb .r .kda{flex:none;font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sb .r .kda{grid-area:kda;align-self:center;font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .sb .r .kda .d{color:var(--chaos)}
-.sb .r .meta{flex:none;font-family:var(--f-mono);font-size:11.5px;color:var(--gold);letter-spacing:.02em;white-space:nowrap;min-width:34px;text-align:right}
+.sb .r .meta{grid-area:gold;align-self:center;font-family:var(--f-mono);font-size:11.5px;color:var(--gold);letter-spacing:.02em;white-space:nowrap}
 .sb .r .meta b{display:none}
-/* item build as a proper grid (3 wide, wraps to a 2nd/3rd row) instead of one cramped
-   line - a fixed column width (not 1fr) keeps icons crisp since itemInto() bakes the
-   sprite-sheet background-size/position for one exact pixel size */
-.sb .r .items{flex-basis:100%;display:grid;grid-template-columns:repeat(3,44px);gap:3px;margin-top:2px}
-.sb .r .items i{width:44px;height:44px;background:var(--inset) no-repeat;box-shadow:inset 0 0 0 1px var(--edge);display:block}
+/* 4 wide, so a full 6-item build + trinket (7 icons) is always exactly 2 rows - never 3.
+   Fixed px columns (not 1fr) keep icons crisp: itemInto() bakes the sprite-sheet
+   background-size/position for one exact pixel size, so a stretched cell would blur. */
+.sb .r .items{grid-area:items;display:grid;grid-template-columns:repeat(4,32px);gap:2px;margin-top:3px}
+.sb .r .items i{width:32px;height:32px;background:var(--inset) no-repeat;box-shadow:inset 0 0 0 1px var(--edge);display:block}
 .sb .r .items i.mt{display:none}
 .sb .r .items i.tr{box-shadow:inset 0 0 0 1px var(--gold-dim)}
 .sb .hint{color:var(--ink-mute);font-size:12px;padding:6px;line-height:1.5}
@@ -337,6 +361,12 @@ canvas.map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 .macro .empty{color:var(--ink-mute);font-size:12px}
 /* hold a floor height so the card count changing per frame doesn't reflow the column while scrubbing */
 #macrobody{min-height:300px}
+/* The card count changes every frame, so this panel's natural height swings ~300-600px.
+   That resizes the whole left column, which changes the sticky row's height, which moves
+   the MAP by up to 37px while you scrub. Pinning both ends (min 300 / max 420, scroll past
+   that) makes the left column a constant height, so nothing downstream can move.
+   Desktop only - on mobile there's no sticky map for it to disturb. */
+@media(min-width:1281px){ #macrobody{max-height:420px;overflow-y:auto} }
 
 /* ---------- breakdown ---------- */
 .components{display:flex;flex-direction:column;font-family:var(--f-mono);font-size:11.5px}
@@ -1147,7 +1177,7 @@ function renderScoreboard(){
     const target=side==='blue'?bodyB:bodyR;
     target.innerHTML=teamHtml;
     target.querySelectorAll('.pt').forEach(e=>spriteInto(e,e.dataset.c,34));
-    target.querySelectorAll('.items i').forEach(e=>{const id=e.dataset.i;if(id){itemInto(e,id,44);e.title=(ITEMS.name[id]||id);}});
+    target.querySelectorAll('.items i').forEach(e=>{const id=e.dataset.i;if(id){itemInto(e,id,32);e.title=(ITEMS.name[id]||id);}});
   });
 }
 
