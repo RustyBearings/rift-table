@@ -123,6 +123,10 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
      frame's content is ever taller than the available space (shouldn't normally happen) */
   #sbpanel-blue,#sbpanel-red{position:sticky;top:16px;height:calc(100vh - 32px);display:flex;flex-direction:column}
   #sbpanel-blue>.body,#sbpanel-red>.body{flex:1 1 auto;min-height:0;overflow-y:auto}
+  /* only here (not mobile/tablet, where the panel has no forced height to share) let the
+     player rows grow to fill it, instead of leaving dead space below a short list */
+  .sb.solo{height:100%}
+  .sb.solo .r{flex:1 1 0;min-height:0}
 }
 
 .panel{
@@ -279,19 +283,19 @@ canvas.map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 .sb .strucrow .sl i.dn{background:transparent;box-shadow:inset 0 0 0 1px var(--sc);opacity:.45}
 /* broadcast-HUD player row: portrait/name/KDA/gold on one line, the item build wraps onto
    its own line below (flex-wrap + items at flex-basis:100% forces the break) */
-.sb .r{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;padding:5px 5px;min-width:0}
+.sb .r{display:flex;flex-wrap:wrap;align-content:center;align-items:center;gap:7px 8px;padding:8px 6px;min-width:0}
 .sb .r.blue{box-shadow:inset 2px 0 0 rgba(51,209,230,.55)}
 .sb .r.red{box-shadow:inset 2px 0 0 rgba(255,75,92,.55)}
 .sb .r:hover{background:var(--panel-2)}
-.sb .r .pt{flex:none;width:24px;height:24px;border-radius:4px;background:var(--inset) no-repeat;box-shadow:inset 0 0 0 1px var(--edge)}
-.sb .r .cn{flex:1 1 auto;min-width:16px;font-family:var(--f-display);font-weight:600;font-size:12px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb .r .pt{flex:none;width:34px;height:34px;border-radius:5px;background:var(--inset) no-repeat;box-shadow:inset 0 0 0 1px var(--edge)}
+.sb .r .cn{flex:1 1 auto;min-width:16px;font-family:var(--f-display);font-weight:600;font-size:14px;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sb .r .cn small{display:none}
-.sb .r .kda{flex:none;font-family:var(--f-mono);font-size:10.5px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sb .r .kda{flex:none;font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .sb .r .kda .d{color:var(--chaos)}
-.sb .r .meta{flex:none;font-family:var(--f-mono);font-size:10px;color:var(--gold);letter-spacing:.02em;white-space:nowrap;min-width:30px;text-align:right}
+.sb .r .meta{flex:none;font-family:var(--f-mono);font-size:11.5px;color:var(--gold);letter-spacing:.02em;white-space:nowrap;min-width:34px;text-align:right}
 .sb .r .meta b{display:none}
-.sb .r .items{flex-basis:100%;display:flex;gap:2px;padding-left:30px}
-.sb .r .items i{width:16px;height:16px;background:var(--inset) no-repeat;box-shadow:inset 0 0 0 1px var(--edge);display:block}
+.sb .r .items{flex-basis:100%;display:flex;gap:2px;padding-left:8px}
+.sb .r .items i{width:19px;height:19px;background:var(--inset) no-repeat;box-shadow:inset 0 0 0 1px var(--edge);display:block}
 .sb .r .items i.mt{display:none}
 .sb .r .items i.tr{box-shadow:inset 0 0 0 1px var(--gold-dim)}
 .sb .hint{color:var(--ink-mute);font-size:12px;padding:6px;line-height:1.5}
@@ -1139,8 +1143,8 @@ function renderScoreboard(){
     teamHtml+=rows.map(row).join('');
     const target=side==='blue'?bodyB:bodyR;
     target.innerHTML=teamHtml;
-    target.querySelectorAll('.pt').forEach(e=>spriteInto(e,e.dataset.c,26));
-    target.querySelectorAll('.items i').forEach(e=>{const id=e.dataset.i;if(id){itemInto(e,id,18);e.title=(ITEMS.name[id]||id);}});
+    target.querySelectorAll('.pt').forEach(e=>spriteInto(e,e.dataset.c,34));
+    target.querySelectorAll('.items i').forEach(e=>{const id=e.dataset.i;if(id){itemInto(e,id,19);e.title=(ITEMS.name[id]||id);}});
   });
 }
 
