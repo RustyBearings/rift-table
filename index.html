@@ -33,7 +33,7 @@
   --f-body:'Archivo','Segoe UI',system-ui,sans-serif;
   --f-mono:'IBM Plex Mono',ui-monospace,'Cascadia Mono',monospace;
   --font-display:var(--f-display);--font-body:var(--f-body);--font-mono:var(--f-mono);
-  --notch:14px;--maxw:1320px;
+  --notch:14px;--maxw:1760px;
 }
 *{box-sizing:border-box}
 html,body{margin:0}
@@ -70,22 +70,32 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
    tall side column. Named areas so the visual order (center first) survives the
    single-column mobile stack regardless of DOM order. */
 .layout{
-  display:grid;grid-template-columns:1fr;
-  grid-template-areas:"center" "left" "right" "footer";
+  display:grid;grid-template-columns:1fr 1fr;
+  grid-template-areas:"center center" "left left" "scoreL scoreR" "right right" "footer footer";
   gap:16px;
 }
 .col-left,.col-right{display:flex;flex-direction:column;gap:14px;min-width:0}
 .col-left{grid-area:left}
 .col-right{grid-area:right}
 .col-main{grid-area:center;display:flex;flex-direction:column;gap:14px;min-width:0;position:static}
+#sbpanel-blue{grid-area:scoreL}
+#sbpanel-red{grid-area:scoreR}
 /* extra breathing room before the footer so it never reads as jammed against the map */
 .layout>footer{grid-area:footer;margin-top:30px}
 
 @media(min-width:1281px){
   .layout{
-    grid-template-columns:minmax(230px,280px) minmax(0,1fr) minmax(230px,280px);
-    grid-template-areas:"left center right" "footer footer footer";
-    gap:20px;align-items:start;
+    /* the two scoreboard strips flank the map directly, like a broadcast HUD, instead of
+       stacking under it - frees the ~230px they used to cost out of the map's vertical
+       budget entirely */
+    grid-template-columns:minmax(230px,280px) minmax(150px,200px) minmax(0,1fr) minmax(150px,200px) minmax(230px,280px);
+    grid-template-areas:"left scoreL center scoreR right" "footer footer footer footer footer";
+    gap:16px;align-items:start;
+  }
+  /* sandbox mode has no scoreboard content - collapse those two columns to 0 instead of
+     leaving big empty gaps flanking the map, and let the map (1fr) reclaim the space */
+  .layout:not(:has(#gamepanel:not([hidden]))){
+    grid-template-columns:minmax(230px,280px) 0 minmax(0,1fr) 0 minmax(230px,280px);
   }
   /* pin the map column inside the viewport so it never scrolls out of view and can't
      be nudged by the side panels changing height while you scrub. This only works while
@@ -103,7 +113,12 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
   .layout:has(#gamepanel:not([hidden])) .col-left{min-height:calc(100vh - 32px + 280px)}
   .col-main .mappanel{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
   .col-main .mappanel>.body{flex:1 1 auto;min-height:0;display:flex;align-items:center;justify-content:center}
-  .col-main .mapwrap{width:auto;height:100%;max-width:100%;max-height:100%;min-height:280px;margin:0;aspect-ratio:1/1}
+  /* width/height are set in px by fitMapSquare() (JS) - no max-width/height clamp here, since
+     that would double-clamp against the already-computed exact size (a max-width:100% here
+     resolves against the parent's PADDING box, ~14px narrower than the content box the JS
+     math uses, so an explicit 664px would get silently shrunk back down to 650) */
+  .col-main .mapwrap{min-height:280px;margin:0;max-width:none;max-height:none;flex:0 0 auto}
+  #sbpanel-blue,#sbpanel-red{position:sticky;top:16px}
 }
 
 .panel{
@@ -233,12 +248,17 @@ canvas.map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 #scrub{width:100%;accent-color:var(--gold);display:block}
 
 /* ---------- scoreboard ---------- */
-#sbpanel{--seam:linear-gradient(90deg,var(--order),var(--chaos))}
-#sbpanel>h2::after{display:none}
-#sbpanel>h2 span{margin-left:auto;color:var(--gold);font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.03em}
-/* broadcast-style HUD: the two teams sit side by side above the map instead of stacked */
+#sbpanel-blue{--seam:var(--order)}
+#sbpanel-red{--seam:var(--chaos)}
+#sbpanel-blue>.body,#sbpanel-red>.body{padding:11px}
+/* broadcast-style HUD: the two teams sit side by side (mobile) or flank the map (desktop) */
 .sb{display:grid;grid-template-columns:1fr 1fr;column-gap:16px;font-size:12px}
 .sbteam{display:flex;flex-direction:column;gap:1px;min-width:0}
+/* solo: each team is its own standalone panel body (flanking the map) rather than half of a shared grid.
+   the flanking columns are narrow (150-200px) regardless of viewport width, so always drop the item
+   icons here rather than relying on the viewport-width media query the shared-grid version uses */
+.sb.solo{display:flex;flex-direction:column;gap:1px}
+.sb.solo .r .items{display:none}
 .sb .teamrow{
   display:flex;justify-content:space-between;align-items:center;
   font:600 10px/1 var(--f-display);letter-spacing:.16em;text-transform:uppercase;color:var(--ink);
@@ -462,9 +482,8 @@ a{color:var(--order)}
   .row{grid-template-columns:64px 1fr 92px;gap:8px}
   .champrow{grid-template-columns:52px 1fr}
 
-  /* scoreboard: stack the two teams back to one column - guarantee the item strip fits a 320px screen */
-  .sb{grid-template-columns:1fr;row-gap:10px}
-  #sbpanel>h2 span{font-size:12px}
+  /* scoreboard: each team gets its own full-width row instead of sharing one - guarantee the item strip fits a 320px screen */
+  .layout{grid-template-areas:"center center" "left left" "scoreL scoreL" "scoreR scoreR" "right right" "footer footer"}
   .sb .r{padding:7px 4px;column-gap:7px}
   .sb .r .items i{width:16px;height:16px}
   .sb .r .cn{font-size:12.5px}
@@ -551,12 +570,10 @@ a{color:var(--order)}
       <div class="panel mappanel">
         <div class="body"><div class="mapwrap" id="mapwrap"><canvas class="map" id="mapcanvas"></canvas></div></div>
       </div>
-
-      <div class="panel" id="sbpanel" hidden>
-        <h2>Scoreboard <span id="sbtime" class="mono">0:00</span></h2>
-        <div class="body"><div class="sb" id="sbbody"></div></div>
-      </div>
     </div>
+
+    <div class="panel" id="sbpanel-blue" hidden><div class="body"><div class="sb solo" id="sbbody-blue"></div></div></div>
+    <div class="panel" id="sbpanel-red" hidden><div class="body"><div class="sb solo" id="sbbody-red"></div></div></div>
 
     <div class="col-right">
       <details class="fold"><summary>Board controls &mdash; champions, gold, objectives</summary>
@@ -1041,6 +1058,9 @@ for(const ln of ['top','mid','bot']){
 }
 
 function render(){
+  fitMapSquare(); // the flanking scoreboard columns collapse/expand via a :has() rule when a
+  // game loads/exits, which doesn't reliably fire the ResizeObserver on the map's box - keep
+  // the square in sync on every render instead of trusting only resize-driven triggers
   const ev=computeEval();
   const pct=ev.p*100,k=ev.netEff/1000;
   $('barblue').style.width=pct.toFixed(1)+'%';
@@ -1083,14 +1103,12 @@ function render(){
 }
 
 function renderScoreboard(){
-  const p=$('sbpanel'), body=$('sbbody');
+  const pB=$('sbpanel-blue'), pR=$('sbpanel-red'), bodyB=$('sbbody-blue'), bodyR=$('sbbody-red');
   const bd=state.board;
-  if(!GAME){p.hidden=true;return;}
-  p.hidden=false;
-  const mm=Math.floor(state.t),ssx=Math.round((state.t-mm)*60);
-  $('sbtime').textContent=mm+':'+(ssx<10?'0':'')+ssx;
+  if(!GAME){pB.hidden=true;pR.hidden=true;return;}
+  pB.hidden=false;pR.hidden=false;
   if(!bd||!bd.length){
-    body.innerHTML='<div class="hint">This game was imported before the scoreboard existed. Re-run the import script to get KDA, gold and items per minute.</div>';
+    bodyB.innerHTML=bodyR.innerHTML='<div class="hint">This game was imported before the scoreboard existed. Re-run the import script to get KDA, gold and items per minute.</div>';
     return;
   }
   const ORD={top:0,jg:1,mid:2,bot:3,sup:4};
@@ -1112,18 +1130,17 @@ function renderScoreboard(){
       return '<span class="sl"><em>'+tag+'</em>'+p+'</span>';};
     return '<div class="strucrow '+side+'" title="turrets + inhibitor still standing">'+lane('top','TOP')+lane('mid','MID')+lane('bot','BOT')+'</div>';
   };
-  let html='';
   ['blue','red'].forEach(side=>{
     const rows=bd.filter(x=>x.side===side).sort((a,b)=>ORD[a.role]-ORD[b.role]);
     const tg=rows.reduce((s,x)=>s+x.gold,0), tk=rows.reduce((s,x)=>s+x.k,0), td=rows.reduce((s,x)=>s+x.d,0);
     let teamHtml='<div class="teamrow '+side+'"><span>'+side.toUpperCase()+'</span><b>'+tk+' / '+td+' &middot; '+(tg/1000).toFixed(1)+'k</b></div>';
     teamHtml+=strucLine(side);
     teamHtml+=rows.map(row).join('');
-    html+='<div class="sbteam '+side+'">'+teamHtml+'</div>';
+    const target=side==='blue'?bodyB:bodyR;
+    target.innerHTML=teamHtml;
+    target.querySelectorAll('.pt').forEach(e=>spriteInto(e,e.dataset.c,26));
+    target.querySelectorAll('.items i').forEach(e=>{const id=e.dataset.i;if(id){itemInto(e,id,18);e.title=(ITEMS.name[id]||id);}});
   });
-  body.innerHTML=html;
-  body.querySelectorAll('.pt').forEach(e=>spriteInto(e,e.dataset.c,26));
-  body.querySelectorAll('.items i').forEach(e=>{const id=e.dataset.i;if(id){itemInto(e,id,18);e.title=(ITEMS.name[id]||id);}});
 }
 
 function drawMap(ev){
@@ -1693,12 +1710,31 @@ $('undo').addEventListener('click',()=>{stopPlay();if(undoStack.length){state=un
 $('reset').addEventListener('click',()=>{pushUndo();exitGame(true);state=clone(DEFAULT_STATE);[...$('presetrow').children].forEach(c=>c.classList.remove('active'));buildControls();syncAll();render();});
 $('ioload').addEventListener('click',doImport);
 $('ioexport').addEventListener('click',()=>{$('io').value=JSON.stringify(state,null,1);$('importmsg').textContent='Current state exported below.';});
-window.addEventListener('resize',()=>schedule());
-// the map now flexes to fill the pinned column - redraw whenever its box actually changes
-// (viewport resize, intro banner dismissal, font load) so the canvas never renders stale
-if(window.ResizeObserver){ let _mw=0,_mh=0; new ResizeObserver(es=>{
-  const r=es[0].contentRect; if(Math.abs(r.width-_mw)>1||Math.abs(r.height-_mh)>1){_mw=r.width;_mh=r.height;schedule();}
-}).observe(mapwrap); }
+// CSS aspect-ratio doesn't reliably shrink-to-fit both axes at once when a flex child has
+// height:100% (definite) AND max-width:100% (a separate clamp) - the browser derives width
+// from the ratio, clamps it down to the narrower box, but does not re-derive height from
+// THAT, so the box ends up non-square. Sizing the square explicitly in JS from the actual
+// available box sidesteps the whole ambiguity - but the box is a row-flex container, so its
+// child (mapwrap) still has default flex-shrink:1 on the main (width) axis only, silently
+// shrinking an explicit inline width back down to fit; CSS locks that off with flex:0 0 auto.
+function fitMapSquare(){
+  if(!matchMedia('(min-width:1281px)').matches){ mapwrap.style.width=''; mapwrap.style.height=''; return; }
+  const box=mapwrap.parentElement,cs=getComputedStyle(box);
+  const padX=parseFloat(cs.paddingLeft)+parseFloat(cs.paddingRight);
+  const padY=parseFloat(cs.paddingTop)+parseFloat(cs.paddingBottom);
+  const w=box.clientWidth-padX,h=box.clientHeight-padY;
+  if(w<=0||h<=0)return;
+  const s=Math.max(200,Math.min(w,h));
+  mapwrap.style.width=s+'px';mapwrap.style.height=s+'px';
+}
+window.addEventListener('resize',()=>{fitMapSquare();schedule();});
+// redraw whenever the map's box actually changes (viewport resize, font load, layout
+// settling) so the canvas never renders stale - observe the PARENT, not mapwrap itself,
+// since mapwrap's own size is now set by fitMapSquare() and would otherwise feed back on itself
+if(window.ResizeObserver){ let _bw=0,_bh=0; new ResizeObserver(es=>{
+  const r=es[0].contentRect; if(Math.abs(r.width-_bw)>1||Math.abs(r.height-_bh)>1){_bw=r.width;_bh=r.height;fitMapSquare();schedule();}
+}).observe(mapwrap.parentElement); }
+fitMapSquare();
 
 /* ---------- hosted-only: fetch games by Riot ID via the import API ---------- */
 function initRiotBox(){
