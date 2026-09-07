@@ -363,10 +363,49 @@ canvas.map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 #macrobody{min-height:300px}
 /* The card count changes every frame, so this panel's natural height swings ~300-600px.
    That resizes the whole left column, which changes the sticky row's height, which moves
-   the MAP by up to 37px while you scrub. Pinning both ends (min 300 / max 420, scroll past
-   that) makes the left column a constant height, so nothing downstream can move.
-   Desktop only - on mobile there's no sticky map for it to disturb. */
-@media(min-width:1281px){ #macrobody{max-height:420px;overflow-y:auto} }
+   the MAP while you scrub. On desktop pin it to ONE fixed height (not a min/max range) so
+   the left column is a dead-constant height no matter what else is stacked above it - a
+   min/max range still swings 300<->420 between frames, which is enough to shift the map
+   once another fixed panel (player focus) is also in the column. Scroll past the fixed
+   height. Mobile has no sticky map to disturb, so it keeps the floor-only behaviour. */
+@media(min-width:1281px){ #macrobody{height:420px;min-height:0;overflow-y:auto} }
+
+/* ---------- player focus (click a champion for their personal plan) ---------- */
+.panel.focus .body{font-size:12px}
+.fhint{color:var(--ink-mute);font-size:12px;line-height:1.55;margin-bottom:10px}
+.froster{display:flex;flex-direction:column;gap:6px}
+.frt{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.frb{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 3px;background:var(--inset);box-shadow:inset 0 0 0 1px var(--edge);border:0;color:var(--ink);cursor:pointer;font:600 10px/1.1 var(--f-display);min-width:0;width:100%}
+.frb:hover{box-shadow:inset 0 0 0 1px var(--edge-lit)}
+.frt.blue .frb{border-left:2px solid var(--order)}
+.frt.red .frb{border-left:2px solid var(--chaos)}
+.frb .fp{width:22px;height:22px;border-radius:4px;background:var(--panel-2) no-repeat;box-shadow:inset 0 0 0 1px var(--edge)}
+.frb span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.frb small{color:var(--ink-mute);font:400 8px/1 var(--f-mono);letter-spacing:.04em}
+.fhead{display:flex;align-items:flex-start;gap:9px;padding-bottom:9px;border-bottom:1px solid var(--edge);margin-bottom:9px}
+.fpic{width:30px;height:30px;border-radius:5px;background:var(--inset) no-repeat;box-shadow:inset 0 0 0 1px var(--edge);flex:0 0 auto}
+.fhead.blue .fpic{box-shadow:inset 0 0 0 1px var(--order)}
+.fhead.red .fpic{box-shadow:inset 0 0 0 1px var(--chaos)}
+.fid{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1 1 auto}
+.fid b{font:600 14px/1.15 var(--f-display);letter-spacing:.01em}
+.fid>span{font:600 9px/1.3 var(--f-mono);letter-spacing:.06em;color:var(--ink-dim);text-transform:uppercase}
+.fstat{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-mute);text-transform:none;letter-spacing:.02em;margin-top:2px}
+.fclose{flex:0 0 auto;background:0;border:0;color:var(--ink-mute);font-size:16px;line-height:1;cursor:pointer;padding:0 2px}
+.fclose:hover{color:var(--ink)}
+.flead{font:600 12px/1.4 var(--f-body);color:var(--ink);margin-bottom:10px}
+.fplan{display:flex;flex-direction:column;gap:8px}
+.fcard{box-shadow:inset 0 0 0 1px var(--edge);border-left:3px solid var(--edge-lit);padding:9px 11px;background:var(--panel-2)}
+.fcard.play{border-left-color:var(--good)}
+.fcard.mistake{border-left-color:var(--chaos);background:linear-gradient(90deg,rgba(255,75,92,.08),transparent 60%)}
+.fcard .fk{font:600 8.5px/1 var(--f-display);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-dim);display:block;margin-bottom:5px}
+.fcard .ft{font:600 13px/1.25 var(--f-display);letter-spacing:.01em;margin-bottom:3px;text-wrap:balance}
+.fcard .fb{font-size:11.5px;color:var(--ink-dim);line-height:1.5}
+.token.sel{box-shadow:0 0 0 3px var(--gold),0 0 12px 3px rgba(244,183,64,.45);z-index:7}
+.sb .r{cursor:pointer}
+.sb .r.sel{outline:2px solid var(--gold);outline-offset:-2px;background:var(--panel-2)}
+/* Fixed slot on desktop: the plan's length changes as you scrub, and a variable-height panel
+   here would resize the left column and move the sticky map. Constant height = nothing downstream shifts. */
+@media(min-width:1281px){ #focusbody{height:300px;overflow-y:auto} }
 
 /* ---------- breakdown ---------- */
 .components{display:flex;flex-direction:column;font-family:var(--f-mono);font-size:11.5px}
@@ -554,6 +593,8 @@ a{color:var(--order)}
 
   <div class="layout">
     <div class="col-left">
+      <div class="panel focus" id="focuspanel"><h2>Player focus</h2><div class="body" id="focusbody"></div></div>
+
       <div class="panel macro"><h2>Macro read</h2><div class="body" id="macrobody"></div></div>
 
       <details class="fold" id="timelinefold" open hidden><summary>Game timeline &mdash; gold, XP &amp; key moments</summary>
@@ -748,6 +789,7 @@ const DEFAULT_STATE={
 let state=clone(DEFAULT_STATE);
 let undoStack=[];
 let GAME=null;
+let SEL=null; // player focus {side,role} - view-state only, never written to state / share links
 function pushUndo(){undoStack.push(clone(state));if(undoStack.length>80)undoStack.shift();}
 
 /* ---------- champion helpers ---------- */
@@ -1136,6 +1178,7 @@ function render(){
   if(GAME){$('scrublabel').textContent=mm+':'+(ssx<10?'0':'')+ssx;}
 
   drawMap(ev);positionTokens();updateChips(ev);renderScoreboard();
+  syncFocusUI();renderFocus(ev);
   if(GAME)drawTimeline();
   bindings.forEach(f=>f());
 }
@@ -1154,7 +1197,8 @@ function renderScoreboard(){
     const items=[];
     for(let n=0;n<6;n++){const id=r.items[n]; if(id)items.push('<i data-i="'+id+'"></i>');}
     if(r.trinket)items.push('<i class="tr" data-i="'+r.trinket+'"></i>');
-    return '<div class="r '+r.side+'" data-champ="'+r.champ+'" title="'+r.champ+' - lvl '+r.lvl+' - '+r.cs+' cs">'
+    const sel=(SEL&&SEL.side===r.side&&SEL.role===r.role)?' sel':'';
+    return '<div class="r '+r.side+sel+'" data-side="'+r.side+'" data-role="'+r.role+'" data-champ="'+r.champ+'" title="'+r.champ+' - lvl '+r.lvl+' - '+r.cs+' cs">'
       +'<span class="pt" data-c="'+r.champ+'"></span>'
       +'<span class="cn">'+r.champ+'<small>lvl '+r.lvl+'</small></span>'
       +'<span class="kda">'+r.k+' / <span class="d">'+r.d+'</span> / '+r.a+'</span>'
@@ -1178,7 +1222,140 @@ function renderScoreboard(){
     target.innerHTML=teamHtml;
     target.querySelectorAll('.pt').forEach(e=>spriteInto(e,e.dataset.c,34));
     target.querySelectorAll('.items i').forEach(e=>{const id=e.dataset.i;if(id){itemInto(e,id,32);e.title=(ITEMS.name[id]||id);}});
+    target.querySelectorAll('.r').forEach(e=>e.addEventListener('click',()=>selectPlayer(e.dataset.side,e.dataset.role)));
   });
+}
+
+/* ---------- player focus: personal coaching for one champion ---------- */
+function selectPlayer(side,role){
+  SEL=(SEL&&SEL.side===side&&SEL.role===role)?null:{side,role};
+  syncFocusUI();renderFocus();
+}
+function clearSel(){ if(!SEL)return; SEL=null;syncFocusUI();renderFocus(); }
+function syncFocusUI(){
+  ['blue','red'].forEach(s=>ROLES.forEach(r=>{
+    const t=tokenEls[s]&&tokenEls[s][r];
+    if(t)t.classList.toggle('sel',!!SEL&&SEL.side===s&&SEL.role===r);
+  }));
+  document.querySelectorAll('.sb .r').forEach(e=>
+    e.classList.toggle('sel',!!SEL&&e.dataset.side===SEL.side&&e.dataset.role===SEL.role));
+}
+function renderFocus(ev){
+  const box=$('focusbody'); if(!box)return;
+  if(!SEL){
+    box.innerHTML='<div class="fhint">Click a champion &mdash; on the map or below &mdash; for their personal plan: what to do right now, and why. It updates as you scrub the timeline.</div>'
+      +'<div class="froster">'+['blue','red'].map(side=>
+        '<div class="frt '+side+'">'+ROLES.map(role=>{
+          const nm=champName(side,role);
+          return '<button class="frb" data-s="'+side+'" data-r="'+role+'" title="'+(nm||RN[role])+'"><span class="fp" data-c="'+(nm||'')+'"></span><span>'+(nm||RN[role])+'</span><small>'+RN[role]+'</small></button>';
+        }).join('')+'</div>').join('')+'</div>';
+    box.querySelectorAll('.frb').forEach(b=>{
+      const nm=champName(b.dataset.s,b.dataset.r);
+      if(nm&&SPRITE.pos[nm])spriteInto(b.querySelector('.fp'),nm,22);
+      b.addEventListener('click',()=>selectPlayer(b.dataset.s,b.dataset.r));
+    });
+    return;
+  }
+  const {side,role}=SEL, nm=champName(side,role), sub=champSub(side,role);
+  ev=ev||computeEval();
+  const bd=state.board&&state.board.find(x=>x.side===side&&x.role===role);
+  const stat=bd?'<span class="fstat">'+bd.k+'/'+bd.d+'/'+bd.a+' &middot; '+(bd.gold/1000).toFixed(1)+'k &middot; lvl '+bd.lvl+' &middot; '+bd.cs+' cs</span>':'';
+  const lead=indLead(side,role);
+  const leadTxt=Math.abs(lead)<0.9?'Even with your lane opponent.'
+    :lead>0?'You&rsquo;re '+lead.toFixed(1)+'k ahead of your lane &mdash; press it.'
+    :'You&rsquo;re '+Math.abs(lead).toFixed(1)+'k behind your lane &mdash; play accordingly.';
+  const plan=playerPlan(side,role,ev);
+  box.innerHTML=
+    '<div class="fhead '+side+'">'
+      +'<span class="fpic" data-c="'+(nm||'')+'"></span>'
+      +'<span class="fid"><b>'+(nm||RN[role])+'</b><span>'+side.toUpperCase()+' '+RN[role].toUpperCase()+(sub?' &middot; '+SUBNAME[sub]:'')+'</span>'+stat+'</span>'
+      +'<button class="fclose" title="Clear (Esc)">&times;</button>'
+    +'</div>'
+    +'<div class="flead">'+leadTxt+'</div>'
+    +'<div class="fplan">'+plan.map(p=>
+        '<div class="fcard '+p.kind+'"><span class="fk">'+(p.kind==='mistake'?'Avoid':p.kind==='play'?'Do now':'Note')+'</span>'
+        +'<div class="ft">'+p.ttl+'</div><div class="fb">'+p.bd+'</div></div>').join('')
+    +'</div>';
+  const pic=box.querySelector('.fpic'); if(nm&&SPRITE.pos[nm])spriteInto(pic,nm,30);
+  box.querySelector('.fclose').addEventListener('click',clearSel);
+}
+// role- and champion-aware recommendations for one player, given the current board state
+function playerPlan(side,role,ev){
+  const s=state, en=side==='blue'?'red':'blue';
+  const out=[], push=(kind,ttl,bd,score)=>out.push({kind,ttl,bd,score});
+  const T=x=>x==='blue'?'Blue':'Red';
+  const nm=champName(side,role)||RN[role];
+  const v=champVec(side,role), lead=indLead(side,role), k=indScale(side,role);
+  const sub=champSub(side,role), subN=sub?SUBNAME[sub]:'this pick';
+  const baronUp=s.baron==='up', hasBuff=(s.baron===side)&&s.baronTimer>0;
+  const drakeSoon=s.drakeTimer<=80, elder=s.elder!=='none';
+  const objLive=baronUp||drakeSoon||elder, objName=baronUp?'Baron':elder?'Elder':'Dragon';
+  const rs=respawn(s.t), p=s.tokens[side][role];
+  const pit=baronUp?PIT.baron:PIT.dragon;
+  const distObj=Math.hypot(p.x-pit.x,p.y-pit.y);
+  const inEnemy=side==='blue'?(p.x+p.y>MAP*1.06):(p.x+p.y<MAP*0.94);
+  const comp=classifyComp(side), ecomp=classifyComp(en);
+
+  if(s.dead[side][role]){
+    push('note','You are dead (~'+rs+'s)',objLive
+      ? 'Your team is stalling '+objName+' until you&rsquo;re back &mdash; on respawn path straight to the pit, don&rsquo;t stop for camps or waves.'
+      : 'Nothing&rsquo;s up. On respawn take the safest farm to catch levels; don&rsquo;t force a play a body down.',100);
+    return out;
+  }
+
+  if(lead>=3.5) push('play','You&rsquo;re the wincon',nm+' is '+lead.toFixed(1)+'k up. Every fight runs through you &mdash; don&rsquo;t get picked before it starts. Hug a flank or your frontline and keep your side warded.',88);
+  else if(lead<=-3.5) push('note','You&rsquo;re behind &mdash; farm it back',T(side)+' can&rsquo;t rely on you yet. Get on the map through side waves and vision, not hero plays. Take a safe reset over a coinflip fight.',70);
+
+  if(objLive){
+    if(distObj>MAP*0.42) push('play','Rotate to '+objName+' now',objName+' is live and you&rsquo;re across the map. Shove your wave and start pathing so you&rsquo;re there before it&rsquo;s contested.',84);
+    else if(role==='sup'||role==='jg') push('play','Set up '+objName+' vision',role.toUpperCase()+' and close to the pit &mdash; clear enemy wards and place your own now, 30&ndash;40s before it&rsquo;s up.',80);
+  }
+  if(hasBuff) push('play','Cash the Baron buff','~'+s.baronTimer+'s left. Group with the empowered wave and take a tower or inhib &mdash; don&rsquo;t let it tick away farming.',82);
+
+  // where is this player standing right now? one proximity pass, shared by every read below,
+  // so the personal plan can never contradict the map ("split!" while the model has them dying).
+  let nearEn=0,backup=0;
+  ROLES.forEach(r2=>{if(s.dead[en][r2])return;const q=s.tokens[en][r2];if(Math.hypot(q.x-p.x,q.y-p.y)<3400)nearEn++;});
+  ROLES.forEach(r2=>{if(r2===role||s.dead[side][r2])return;const q=s.tokens[side][r2];if(Math.hypot(q.x-p.x,q.y-p.y)<3600)backup++;});
+  const enAlive=5-deadCount(en);
+  const canSolo=(v[0]>=2.6&&k>=1.3)||k>=1.9;
+  let caught=false;
+  if(nearEn>=2&&backup===0){
+    caught=true;
+    if(canSolo) push('play','Take the 1v'+nearEn,nm+' is ahead enough to win this before '+T(en)+' groups &mdash; commit while it&rsquo;s '+nearEn+', not 3+.',72);
+    else push('mistake','Get out &mdash; caught 1v'+nearEn,'No backup, and a '+subN+' loses this. Flash or walk out now, don&rsquo;t trade.',96);
+  } else if(inEnemy&&backup===0&&enAlive>=3&&!canSolo){
+    caught=true;
+    const fragile=champBase(side,role)[5]>=2||champBase(side,role)[4]<1;
+    push('mistake','You&rsquo;re overextended',nm+' is deep in '+T(en)+'&rsquo;s half with no one in collapse range and '+enAlive+' alive.'+(fragile?' A '+subN+' dies to any collapse here.':'')+' Ward and pull back to a safe wave or your team.',90);
+  }
+
+  if(!caught){
+    if(role==='top'){
+      if(v[1]>=2.4&&v[0]>=2.2&&comp!=='Teamfight') push('play','You&rsquo;re the side threat',nm+' out-duels most solos. Keep a side lane pushing, force '+T(en)+' to answer with two, and play the 4v4 through mid.',64);
+      else push('note','Group with your team',comp==='Teamfight'?'Your comp wants the 5v5 &mdash; don&rsquo;t isolate top.':'No hard split threat here &mdash; rotate mid and trade as a group.',50);
+    }
+    if(role==='jg'&&!objLive) push('note','Farm strong side, shadow prio','Nothing&rsquo;s up. Take the '+((lanePrio('top')>0)===(side==='blue')?'top':'bot')+'-side jungle and hover the lane with push so you can answer a gank.',48);
+    if(role==='mid'){
+      if(v[4]<1.3&&inEnemy) push('mistake','You&rsquo;re pushed up too far','A '+subN+' with no escape dies to a jungle gank here. Ward the river ahead of the wave and hold the safe half until you see MIA.',78);
+      else push('note','Shove and roam','Get mid prio then roam to '+(objLive?'the pit':'whichever lane has no vision')+'. Don&rsquo;t let mid crash on you &mdash; that&rsquo;s how you get collapsed.',46);
+    }
+    if(role==='bot'){
+      if(lead>=0) push('play','Play for the teamfight','Even-or-ahead damage. Sit behind your frontline, let their dive spend itself, then step up. Don&rsquo;t walk into poke range.',58);
+      else push('note','Farm safe, skip the poke','Down gold as the carry &mdash; catch side waves with vision, don&rsquo;t walk up to trade. Scale to your item spikes.',56);
+      if(ecomp==='Dive'||ecomp==='Pick') push('mistake','They&rsquo;re hunting you',T(en)+' is a '+ecomp.toLowerCase()+' comp &mdash; hold flash for their engage, never face-check, stay in your support&rsquo;s peel range.',66);
+    }
+    if(role==='sup') push('play','Ward the next fight first',(objLive?'The fight is at '+objName+(baronUp?' now. ':' in ~'+s.drakeTimer+'s. '):'')+'Deep wards on '+(objLive?'the pit flanks':'your strong-side river')+' so nobody face-checks blind.',60);
+
+    const ln=role==='sup'?'bot':role==='jg'?null:role;
+    if(ln){
+      const w=waveOf(ln), pinnedIsMe=(w>0&&side==='red')||(w<0&&side==='blue');
+      if(Math.abs(w)===2&&pinnedIsMe) push('note','Catch your wave first','The '+ln+' wave is crashing your tower &mdash; you&rsquo;re stuck clearing it ~20s. Don&rsquo;t sign up for a play that needs you until it resets.',44);
+    }
+  }
+
+  out.sort((a,b)=>b.score-a.score);
+  return out.slice(0,4);
 }
 
 function drawMap(ev){
@@ -1266,7 +1443,7 @@ function attachDrag(e,side,role){
     const st=state.tokens[side][role];st.x=px*MAP;st.y=(1-py)*MAP;
     e.style.left=(px*100)+'%';e.style.top=(py*100)+'%';markEdited();schedule();
   });
-  e.addEventListener('pointerup',ev=>{clearTimeout(lp);if(!drag)return;drag=false;try{e.releasePointerCapture(ev.pointerId);}catch(x){}if(!moved)undoStack.pop();render();});
+  e.addEventListener('pointerup',ev=>{clearTimeout(lp);if(!drag)return;drag=false;try{e.releasePointerCapture(ev.pointerId);}catch(x){}if(!moved){undoStack.pop();selectPlayer(side,role);}render();});
   e.addEventListener('keydown',ev=>{
     const st=state.tokens[side][role],stp=MAP*0.03;let h=true;
     if(ev.key==='ArrowLeft'){pushUndo();st.x=clamp(st.x-stp,0,MAP);}
@@ -1616,6 +1793,7 @@ function showGame(i){
 function exitGame(silent){
   if(!GAME&&!silent)return;
   stopPlay();
+  SEL=null;
   GAME=null;_marksGame=null;_seriesGame=null;SERIES=null;
   renderScrubMarks();$('gamepanel').hidden=true;$('timelinefold').hidden=true;
   if(!silent){state=clone(DEFAULT_STATE);buildControls();syncAll();render();}
@@ -1652,6 +1830,7 @@ document.addEventListener('keydown',e=>{
   else if(e.key===' '||e.key==='Spacebar'){ e.preventDefault(); togglePlay(); }
 });
 $('playbtn').addEventListener('click',togglePlay);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&SEL){ e.preventDefault(); clearSel(); } });
 
 $('scrub').addEventListener('pointerdown',()=>{if(GAME){stopPlay();pushUndo();}});
 $('scrub').addEventListener('input',()=>{if(GAME)showGame(+$('scrub').value);});
