@@ -725,7 +725,7 @@ a{color:var(--order)}
 
 <button class="helpfab" id="helpbtn" aria-label="How to use Rift Table" aria-expanded="false" title="How to use Rift Table">?</button>
 <div class="helppop" id="helppop" hidden>
-  This replays a real game minute by minute. <b>Drag the slider</b> to move through it (markers = dragons, baron, grubs&hellip; click one to jump). <b>Drag champion icons</b> to test a rotation, or <b>right-click a champion</b> to kill it and read the 4v5. The side panels react &mdash; gold lead, next play, scoreboard, structures. <b>Load a game</b> swaps in your own.
+  This replays a real game minute by minute. <b>Drag the slider</b> to move through it (markers = dragons, baron, grubs&hellip; click one to jump). <b>Drag champion icons</b> to test a rotation, or <b>right-click a champion</b> to kill it and read the 4v5. The side panels react &mdash; gold lead, next play, scoreboard, structures. Small minion clusters in each lane show the modelled wave state (which way it&rsquo;s pushing). <b>Load a game</b> swaps in your own.
 </div>
 
 <datalist id="champlist"></datalist>
@@ -1358,6 +1358,47 @@ function playerPlan(side,role,ev){
   return out.slice(0,4);
 }
 
+// coarse minion-wave markers: a lane's marker sits further toward whichever base the wave is
+// pushed into (state.wave -2 = Red crashed into Blue's tower .. +2 = Blue crashed into Red's).
+// This is the same 5-point modelled wave the eval/tempo terms use - NOT real minion positions
+// (the Riot timeline API has CS counts but no wave location data).
+const LANE_BEND={top:[0.066,0.072],bot:[0.930,0.928],mid:null}; // approx corner of the L-shaped side lanes, in map fractions
+function lanePath(ln){
+  const a=TURRETS[ln].blue[0],b=TURRETS[ln].red[0],bend=LANE_BEND[ln];
+  return bend?[a,bend,b]:[a,b];
+}
+function ptAlong(path,t){
+  const segs=[];let tot=0;
+  for(let i=0;i<path.length-1;i++){const d=Math.hypot(path[i+1][0]-path[i][0],path[i+1][1]-path[i][1]);segs.push(d);tot+=d;}
+  let want=t*tot;
+  for(let i=0;i<segs.length;i++){
+    if(want<=segs[i]||i===segs.length-1){const f=segs[i]?want/segs[i]:0;
+      return [path[i][0]+(path[i+1][0]-path[i][0])*f,path[i][1]+(path[i+1][1]-path[i][1])*f];}
+    want-=segs[i];
+  }
+  return path[path.length-1];
+}
+function drawWaves(g,W,H){
+  ['top','mid','bot'].forEach(ln=>{
+    const w=waveOf(ln);if(!w)return;
+    const path=lanePath(ln),t=(w+2)/4,P=ptAlong(path,t),cx=P[0]*W,cy=P[1]*H;
+    const blue=w>0,col=blue?'56,210,230':'255,93,93';
+    const A=ptAlong(path,clamp(t-0.06,0,1)),B=ptAlong(path,clamp(t+0.06,0,1));
+    let dx=(B[0]-A[0])*W,dy=(B[1]-A[1])*H;const dl=Math.hypot(dx,dy)||1;dx/=dl;dy/=dl;
+    if(!blue){dx=-dx;dy=-dy;}
+    g.save();
+    g.fillStyle='rgba('+col+',.9)';
+    [[-3,-2],[0,1],[3,-1]].forEach(o=>{g.beginPath();g.arc(cx+o[0],cy+o[1],Math.abs(w)>=2?2.1:1.6,0,7);g.fill();});
+    const ax=cx+dx*7,ay=cy+dy*7,pa=Math.atan2(dy,dx);
+    g.strokeStyle='rgba('+col+',.85)';g.lineWidth=1.4;
+    g.beginPath();g.moveTo(cx-dx*3,cy-dy*3);g.lineTo(ax,ay);
+    g.moveTo(ax,ay);g.lineTo(ax-Math.cos(pa-0.5)*4,ay-Math.sin(pa-0.5)*4);
+    g.moveTo(ax,ay);g.lineTo(ax-Math.cos(pa+0.5)*4,ay-Math.sin(pa+0.5)*4);
+    g.stroke();
+    if(Math.abs(w)>=2){g.strokeStyle='rgba('+col+',.45)';g.lineWidth=1;g.beginPath();g.arc(cx,cy,7,0,7);g.stroke();}
+    g.restore();
+  });
+}
 function drawMap(ev){
   const size=Math.min(mapwrap.clientWidth,mapwrap.clientHeight)||480,dpr=window.devicePixelRatio||1;
   cv.width=size*dpr;cv.height=size*dpr;
@@ -1390,6 +1431,7 @@ function drawMap(ev){
   const bx=PIT.baron.x/MAP,by=1-PIT.baron.y/MAP,dx=PIT.dragon.x/MAP,dy=1-PIT.dragon.y/MAP;
   ring(bx,by,state.baron==='up'?'#a970ff':(state.baron==='blue'?'#38d2e6':state.baron==='red'?'#ff5d5d':'rgba(150,160,170,.5)'));
   ring(dx,dy,state.elder!=='none'?'#f2b035':soul?'#f2b035':state.drakeTimer<=6?'#5ab8a0':'rgba(150,160,170,.5)');
+  drawWaves(g,W,H);
 }
 
 function positionTokens(){
