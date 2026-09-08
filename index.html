@@ -1379,9 +1379,9 @@ function playerPlan(side,role,ev){
 // side's inner turret, through the corner on the L-shaped lanes) so t=0 reads as "crashed on
 // Blue", t=0.5 as mid-lane, t=1 as "crashed on Red". Coarse by design - a modelled indicator.
 const LANE_PTS={
-  top:[[0.077,0.260],[0.066,0.083],[0.272,0.093]],
+  top:[[0.090,0.250],[0.080,0.098],[0.270,0.100]],
   mid:[[0.434,0.543],[0.570,0.459]],
-  bot:[[0.783,0.902],[0.933,0.910],[0.921,0.755]]
+  bot:[[0.780,0.888],[0.902,0.892],[0.900,0.760]]
 };
 function ptAlong(path,t){
   const segs=[];let tot=0;
@@ -1394,30 +1394,34 @@ function ptAlong(path,t){
   }
   return path[path.length-1];
 }
-// caster-minion marker in each lane at the modelled wave position; arrow below points the push direction
+// caster-minion marker in every lane at the modelled wave position; arrow below points the push
+// direction. An even lane (wave 0) still shows a dim minion at mid-lane, just with no arrow.
 function drawWaves(g,W,H){
   ['top','mid','bot'].forEach(ln=>{
-    const w=waveOf(ln);if(!w)return;
+    const w=waveOf(ln);
     const P=LANE_PTS[ln],t=(w+2)/4,C=ptAlong(P,t),cx=C[0]*W,cy=C[1]*H;
     const blue=w>0,col=blue?'56,210,230':'255,93,93',crash=Math.abs(w)>=2;
     const A=ptAlong(P,clamp(t-0.05,0,1)),B=ptAlong(P,clamp(t+0.05,0,1));
     let dx=(B[0]-A[0])*W,dy=(B[1]-A[1])*H;const dl=Math.hypot(dx,dy)||1;dx/=dl;dy/=dl;
     if(!blue){dx=-dx;dy=-dy;}
-    const sz=crash?25:20, img=MINION_IMG[blue?'blue':'red'];
+    const sz=!w?15:crash?25:20, img=MINION_IMG[w<0?'red':'blue'];
     g.save();
+    if(!w)g.globalAlpha=0.42;
     if(img&&img.complete&&img.naturalWidth){
       g.drawImage(img,cx-sz/2,cy-sz/2-1,sz,sz);
     }else{
-      g.fillStyle='rgba('+col+',.9)';g.beginPath();g.arc(cx,cy,sz*0.32,0,7);g.fill();
+      g.fillStyle='rgba('+(w?col:'150,160,170')+',.85)';g.beginPath();g.arc(cx,cy,sz*0.32,0,7);g.fill();
     }
-    // direction arrow, sitting just below the minion
-    const ax=cx,ay=cy+sz/2+1,tx=ax+dx*6,ty=ay+dy*6,pang=Math.atan2(dy,dx);
-    g.strokeStyle='rgba('+col+',.95)';g.lineWidth=1.5;g.lineCap='round';g.lineJoin='round';
-    g.beginPath();g.moveTo(ax-dx*3,ay-dy*3);g.lineTo(tx,ty);
-    g.moveTo(tx,ty);g.lineTo(tx-Math.cos(pang-0.5)*3.6,ty-Math.sin(pang-0.5)*3.6);
-    g.moveTo(tx,ty);g.lineTo(tx-Math.cos(pang+0.5)*3.6,ty-Math.sin(pang+0.5)*3.6);
-    g.stroke();
-    if(crash){g.strokeStyle='rgba('+col+',.4)';g.lineWidth=1;g.beginPath();g.arc(cx,cy,sz*0.7,0,7);g.stroke();}
+    if(w){
+      // direction arrow, sitting just below the minion
+      const ax=cx,ay=cy+sz/2+1,tx=ax+dx*6,ty=ay+dy*6,pang=Math.atan2(dy,dx);
+      g.strokeStyle='rgba('+col+',.95)';g.lineWidth=1.5;g.lineCap='round';g.lineJoin='round';
+      g.beginPath();g.moveTo(ax-dx*3,ay-dy*3);g.lineTo(tx,ty);
+      g.moveTo(tx,ty);g.lineTo(tx-Math.cos(pang-0.5)*3.6,ty-Math.sin(pang-0.5)*3.6);
+      g.moveTo(tx,ty);g.lineTo(tx-Math.cos(pang+0.5)*3.6,ty-Math.sin(pang+0.5)*3.6);
+      g.stroke();
+      if(crash){g.strokeStyle='rgba('+col+',.4)';g.lineWidth=1;g.beginPath();g.arc(cx,cy,sz*0.7,0,7);g.stroke();}
+    }
     g.restore();
   });
 }
