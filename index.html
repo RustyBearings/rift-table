@@ -1362,11 +1362,14 @@ function playerPlan(side,role,ev){
 // pushed into (state.wave -2 = Red crashed into Blue's tower .. +2 = Blue crashed into Red's).
 // This is the same 5-point modelled wave the eval/tempo terms use - NOT real minion positions
 // (the Riot timeline API has CS counts but no wave location data).
-const LANE_BEND={top:[0.066,0.072],bot:[0.930,0.928],mid:null}; // approx corner of the L-shaped side lanes, in map fractions
-function lanePath(ln){
-  const a=TURRETS[ln].blue[0],b=TURRETS[ln].red[0],bend=LANE_BEND[ln];
-  return bend?[a,bend,b]:[a,b];
-}
+// wave axis per lane in map fractions: spans the meaty part of the lane channel (roughly each
+// side's inner turret, through the corner on the L-shaped lanes) so t=0 reads as "crashed on
+// Blue", t=0.5 as mid-lane, t=1 as "crashed on Red". Coarse by design - a modelled indicator.
+const LANE_PTS={
+  top:[[0.077,0.260],[0.066,0.083],[0.272,0.093]],
+  mid:[[0.434,0.543],[0.570,0.459]],
+  bot:[[0.783,0.902],[0.933,0.910],[0.921,0.755]]
+};
 function ptAlong(path,t){
   const segs=[];let tot=0;
   for(let i=0;i<path.length-1;i++){const d=Math.hypot(path[i+1][0]-path[i][0],path[i+1][1]-path[i][1]);segs.push(d);tot+=d;}
@@ -1378,24 +1381,28 @@ function ptAlong(path,t){
   }
   return path[path.length-1];
 }
+// small minion glyph in each lane at the modelled wave position; chevron points the push direction
 function drawWaves(g,W,H){
   ['top','mid','bot'].forEach(ln=>{
     const w=waveOf(ln);if(!w)return;
-    const path=lanePath(ln),t=(w+2)/4,P=ptAlong(path,t),cx=P[0]*W,cy=P[1]*H;
-    const blue=w>0,col=blue?'56,210,230':'255,93,93';
-    const A=ptAlong(path,clamp(t-0.06,0,1)),B=ptAlong(path,clamp(t+0.06,0,1));
+    const P=LANE_PTS[ln],t=(w+2)/4,C=ptAlong(P,t),cx=C[0]*W,cy=C[1]*H;
+    const blue=w>0,col=blue?'56,210,230':'255,93,93',crash=Math.abs(w)>=2,s=crash?1.35:1;
+    const A=ptAlong(P,clamp(t-0.05,0,1)),B=ptAlong(P,clamp(t+0.05,0,1));
     let dx=(B[0]-A[0])*W,dy=(B[1]-A[1])*H;const dl=Math.hypot(dx,dy)||1;dx/=dl;dy/=dl;
     if(!blue){dx=-dx;dy=-dy;}
-    g.save();
-    g.fillStyle='rgba('+col+',.9)';
-    [[-3,-2],[0,1],[3,-1]].forEach(o=>{g.beginPath();g.arc(cx+o[0],cy+o[1],Math.abs(w)>=2?2.1:1.6,0,7);g.fill();});
-    const ax=cx+dx*7,ay=cy+dy*7,pa=Math.atan2(dy,dx);
-    g.strokeStyle='rgba('+col+',.85)';g.lineWidth=1.4;
-    g.beginPath();g.moveTo(cx-dx*3,cy-dy*3);g.lineTo(ax,ay);
-    g.moveTo(ax,ay);g.lineTo(ax-Math.cos(pa-0.5)*4,ay-Math.sin(pa-0.5)*4);
-    g.moveTo(ax,ay);g.lineTo(ax-Math.cos(pa+0.5)*4,ay-Math.sin(pa+0.5)*4);
+    const bw=4.6*s,bh=5.6*s;
+    const rr=(x,y,ww,hh,r)=>{g.beginPath();g.moveTo(x+r,y);g.arcTo(x+ww,y,x+ww,y+hh,r);g.arcTo(x+ww,y+hh,x,y+hh,r);g.arcTo(x,y+hh,x,y,r);g.arcTo(x,y,x+ww,y,r);g.closePath();};
+    g.save();g.translate(cx,cy);
+    g.fillStyle='rgba('+col+',.95)';g.strokeStyle='rgba(5,9,13,.85)';g.lineWidth=.8;
+    rr(-bw/2,-bh/2,bw,bh,1.4);g.fill();g.stroke();
+    g.fillStyle='rgba(255,255,255,.4)';rr(-bw/2,-bh/2,bw,bh*0.4,1.4);g.fill();
+    const hx=dx*(bw/2+3),hy=dy*(bw/2+3),pang=Math.atan2(dy,dx);
+    g.strokeStyle='rgba('+col+',.9)';g.lineWidth=1.4;g.beginPath();
+    g.moveTo(hx-Math.cos(pang-0.6)*3.2,hy-Math.sin(pang-0.6)*3.2);
+    g.lineTo(hx,hy);
+    g.lineTo(hx-Math.cos(pang+0.6)*3.2,hy-Math.sin(pang+0.6)*3.2);
     g.stroke();
-    if(Math.abs(w)>=2){g.strokeStyle='rgba('+col+',.45)';g.lineWidth=1;g.beginPath();g.arc(cx,cy,7,0,7);g.stroke();}
+    if(crash){g.strokeStyle='rgba('+col+',.4)';g.lineWidth=1;g.beginPath();g.arc(0,0,7.5,0,7);g.stroke();}
     g.restore();
   });
 }
