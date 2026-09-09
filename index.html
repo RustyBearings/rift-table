@@ -352,6 +352,8 @@ canvas.map{position:absolute;inset:0;width:100%;height:100%;z-index:1}
 .macro .card:last-child{margin-bottom:0}
 .macro .card.red{border-left-color:var(--chaos)}
 .macro .card.mistake{border-left-color:var(--chaos);background:linear-gradient(90deg,rgba(255,75,92,.08),transparent 60%)}
+.macro .card.play{border-left-color:var(--good);background:linear-gradient(90deg,rgba(63,202,136,.09),transparent 60%)}
+.macro .card.play .k{color:var(--good)}
 .macro .card .k{font:600 9.5px/1 var(--f-display);letter-spacing:.16em;text-transform:uppercase;display:flex;gap:8px;align-items:center;margin-bottom:6px;color:var(--ink-dim)}
 .chip{font:600 9px/1 var(--f-mono);padding:2px 5px;letter-spacing:.06em}
 .chip.blue{background:rgba(51,209,230,.16);color:var(--order)}
@@ -581,6 +583,28 @@ a{color:var(--order)}
   .presetrow{gap:7px}
 
 }
+
+/* ---------- section accent colour-coding ---------- */
+/* each functional group carries an --acc RGB triple; the panel/fold top seam, a faint
+   header wash, and the header label text all read from it. Grouped so the page shows
+   at a glance which panels belong together: cyan = read the game, gold = timeline,
+   purple = advantage math, green = control the board. */
+.acc-read{--acc:51,209,230}
+.acc-time{--acc:244,183,64}
+.acc-break{--acc:166,116,255}
+.acc-ctrl{--acc:63,202,136}
+.panel.acc-read,.panel.acc-time,.panel.acc-break,.panel.acc-ctrl,
+.fold.acc-read,.fold.acc-time,.fold.acc-break,.fold.acc-ctrl{--seam:rgb(var(--acc))}
+.panel.acc-read>h2,.panel.acc-time>h2,.panel.acc-break>h2,.panel.acc-ctrl>h2,
+.fold.acc-read>summary,.fold.acc-time>summary,.fold.acc-break>summary,.fold.acc-ctrl>summary{
+  background:linear-gradient(90deg,rgba(var(--acc),.13),rgba(var(--acc),.03) 55%,transparent);
+  color:rgb(var(--acc));
+}
+.fold.acc-read[open]>summary,.fold.acc-time[open]>summary,
+.fold.acc-break[open]>summary,.fold.acc-ctrl[open]>summary{color:rgb(var(--acc))}
+.panel.acc-read>h2::after,.panel.acc-time>h2::after,.panel.acc-break>h2::after,.panel.acc-ctrl>h2::after,
+.fold.acc-read>summary::after,.fold.acc-time>summary::after,
+.fold.acc-break>summary::after,.fold.acc-ctrl>summary::after{color:rgba(var(--acc),.5)}
 </style>
 
 <div class="wrap">
@@ -594,11 +618,11 @@ a{color:var(--order)}
 
   <div class="layout">
     <div class="col-left">
-      <div class="panel focus" id="focuspanel"><h2>Player focus</h2><div class="body" id="focusbody"></div></div>
+      <div class="panel focus acc-read" id="focuspanel"><h2>Player focus</h2><div class="body" id="focusbody"></div></div>
 
-      <div class="panel macro"><h2>Macro read</h2><div class="body" id="macrobody"></div></div>
+      <div class="panel macro acc-read"><h2>Macro read</h2><div class="body" id="macrobody"></div></div>
 
-      <details class="fold" id="timelinefold" open hidden><summary>Game timeline &mdash; gold, XP &amp; key moments</summary>
+      <details class="fold acc-time" id="timelinefold" open hidden><summary>Game timeline &mdash; gold, XP &amp; key moments</summary>
         <div class="foldbody">
           <canvas id="tlgraph" aria-label="Gold and XP lead over the game"></canvas>
           <div class="tlleg">
@@ -609,7 +633,7 @@ a{color:var(--order)}
         </div>
       </details>
 
-      <details class="fold"><summary>Advantage breakdown</summary>
+      <details class="fold acc-break"><summary>Advantage breakdown</summary>
         <div class="foldbody"><div class="components" id="components"></div></div>
       </details>
     </div>
@@ -656,11 +680,11 @@ a{color:var(--order)}
     <div class="panel" id="sbpanel-red" hidden><div class="body"><div class="sb solo" id="sbbody-red"></div></div></div>
 
     <div class="col-right">
-      <details class="fold"><summary>Board controls &mdash; champions, gold, objectives</summary>
+      <details class="fold acc-ctrl"><summary>Board controls &mdash; champions, gold, objectives</summary>
         <div class="foldbody" id="controls"></div>
       </details>
 
-      <details class="fold"><summary>Scenarios</summary>
+      <details class="fold acc-ctrl"><summary>Scenarios</summary>
         <div class="foldbody">
           <div class="presetrow" id="presetrow"></div>
           <div class="btnrow">
@@ -671,7 +695,7 @@ a{color:var(--order)}
         </div>
       </details>
 
-      <details class="fold" id="loadfold"><summary>Load a game</summary>
+      <details class="fold acc-ctrl" id="loadfold"><summary>Load a game</summary>
         <div class="foldbody">
           <div id="riotbox">
             <div class="note" style="margin-bottom:8px">Type your Riot ID, pick a game &mdash; no key or setup.</div>
@@ -1160,7 +1184,7 @@ function render(){
   $('barblue').style.width=pct.toFixed(1)+'%';
   const en=$('evalnum');
   en.textContent=(k>=0?'+':'')+k.toFixed(1)+'k';
-  en.style.color=Math.abs(k)<0.7?'var(--ink-dim)':k>=0?'var(--blue)':'var(--red)';
+  en.style.color=Math.abs(k)<0.7?'var(--gold)':k>=0?'var(--blue)':'var(--red)';
   $('evalread').textContent=readText(ev.netEff,ev.comp);
   $('evalsplit').textContent='BLUE '+Math.round(pct)+'% / RED '+Math.round(100-pct)+'%';
 
@@ -1180,7 +1204,7 @@ function render(){
   updateMacroAlert(cards[0]);
   $('macrobody').innerHTML=cards.length
     ?cards.map((c,i)=>{
-      const cls=c.kind==='mistake'?'mistake':c.team==='red'?'red':'';
+      const cls=c.kind==='mistake'?'mistake':c.kind==='play'?'play':c.team==='red'?'red':'';
       const chip=c.team?'<span class="chip '+c.team+'">'+c.team.toUpperCase()+'</span>':'';
       const kind=c.kind==='mistake'?'! Mistake risk':c.kind==='play'?'Recommended':'Read';
       const onMap=(i===0&&c.loc)?'<span class="onmap" title="Marked on the map">&#9673; on map</span>':'';
