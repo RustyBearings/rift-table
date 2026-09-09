@@ -2024,7 +2024,6 @@ fitMapSquare();
 /* ---------- hosted-only: fetch games by Riot ID via the import API ---------- */
 function initRiotBox(){
   const idInp=$('riotid'), regSel=$('riotregion'), list=$('gamelist'), msg=$('importmsg');
-  try{ const s=localStorage.getItem('rt.riotid'); if(s)idInp.value=s; }catch(e){}
 
   if(!IMPORT_API){
     // no import service wired (e.g. this preview) - explain, keep the paste path handy
@@ -2041,7 +2040,6 @@ function initRiotBox(){
   async function fetchGames(){
     const rid=idInp.value.trim();
     if(!rid.includes('#')){ msg.textContent='Enter your Riot ID as Name#TAG.'; return; }
-    try{ localStorage.setItem('rt.riotid',rid); }catch(e){}
     list.innerHTML='<div class="busy">Finding games...</div>'; msg.textContent='';
     const u=base+'/api/games?riotId='+encodeURIComponent(rid)+(regSel.value?'&region='+regSel.value:'');
     let r;
