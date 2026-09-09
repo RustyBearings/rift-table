@@ -44,7 +44,8 @@ body{
 body::before{
   content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
   background:
-    radial-gradient(1100px 620px at 50% 0%, rgba(51,209,230,.05), transparent 70%),
+    radial-gradient(1100px 620px at 50% 0%, rgba(51,209,230,.10), transparent 70%),
+    radial-gradient(1000px 560px at 50% 100%, rgba(255,75,92,.06), transparent 72%),
     repeating-linear-gradient(0deg, transparent 0 47px, rgba(140,170,190,.02) 47px 48px),
     repeating-linear-gradient(90deg, transparent 0 47px, rgba(140,170,190,.02) 47px 48px);
 }
@@ -164,6 +165,9 @@ header.top{display:flex;justify-content:space-between;align-items:flex-end;gap:2
   clip-path:polygon(var(--notch) 0,100% 0,100% calc(100% - var(--notch)),calc(100% - var(--notch)) 100%,0 100%,0 var(--notch));
 }
 .evalstrip::before{content:"";position:absolute;top:0;left:var(--notch);right:0;height:2px;background:var(--seam)}
+/* faint wash toward whichever side leads - same weight as the macro-read cards */
+.evalstrip.lead-blue{background:linear-gradient(90deg,rgba(51,209,230,.10),transparent 60%),var(--panel)}
+.evalstrip.lead-red{background:linear-gradient(270deg,rgba(255,75,92,.10),transparent 60%),var(--panel)}
 .er{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:14px}
 /* fixed height so the read wrapping 1<->2 lines while scrubbing never nudges the map */
 .ec{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-top:6px;min-height:31px}
@@ -639,7 +643,7 @@ a{color:var(--order)}
     </div>
 
     <div class="col-main">
-      <div class="evalstrip">
+      <div class="evalstrip" id="evalstrip">
         <div class="er">
           <span class="evalnum" id="evalnum">+0.0k</span>
           <div class="bar"><div class="blue" id="barblue" style="width:50%"></div><div class="mid"></div>
@@ -1185,6 +1189,9 @@ function render(){
   const en=$('evalnum');
   en.textContent=(k>=0?'+':'')+k.toFixed(1)+'k';
   en.style.color=Math.abs(k)<0.7?'var(--gold)':k>=0?'var(--blue)':'var(--red)';
+  const es=$('evalstrip');
+  es.classList.toggle('lead-blue',k>=0.7);
+  es.classList.toggle('lead-red',k<=-0.7);
   $('evalread').textContent=readText(ev.netEff,ev.comp);
   $('evalsplit').textContent='BLUE '+Math.round(pct)+'% / RED '+Math.round(100-pct)+'%';
 
